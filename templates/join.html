@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" data-ng-app="joinForm">
+  <head>
+    <meta charset="utf-8">
+    <title>Pirate Party Australia - Preselection Nomination Form 2013</title>
+    <link rel="stylesheet" type="text/css" href="../static/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="../static/bootstrap-responsive.min.css">
+    <link rel="stylesheet" type="text/css" href="../static/webfonts.css">
+    <script src="../static/jquery-1.9.1.min.js"></script>
+    <script src="../static/angular.min.js"></script>
+    <script src="../static/join.js"></script>
+    <script>
+      $(function() { $("[required]").each(function(){
+        var id = $(this).attr('id');
+        if (id) {
+          $("[for='" + id + "']").append("<span style='color: red'> *</span>");
+        } else {
+          $(this).parent().append("<span style='color: red'> *</span>");
+        }
+      })});
+    </script>
+    <style>
+      body { background-color: #0073ae; padding: 0; }
+      h1, h4, legend { font-family: "GehenSans"; }
+      .container {
+        background-color: white;
+        padding: 1em;
+        border: 1px solid gray;
+        max-width: 860px;
+        box-shadow: 0px 0px 25px black;
+      }
+    </style>
+    <meta name="robots" content="noindex,nofollow">
+    <base target="_blank">
+  </head>
+  <body>
+    <div class='container' data-ng-controller="JoinCtrl">
+      <div class="page-header">
+        <h1>
+          Pirate Party Australia
+          <small>Membership Application</small>
+        </h1>
+      </div>
+      <div class='alert alert-info'>
+          This information will be used for the purposes of registering a political party with the Australian Electoral Commission.
+          <a href="http://pirateparty.org.au/privacy">Privacy Policy</a>
+      </div>  
+      <form class="form-horizontal">
+        <fieldset>
+          <legend>Details of Applicant</legend>
+          <h4>Personal Information</h4>
+          <div class='alert alert-info'>
+            Please enter your details exactly as they would appear on the electoral roll.
+          </div>
+          <div class="control-group">
+            <label class="control-label" for="given-names">Given name(s)</label>
+            <div class="controls">
+              <input required type="text" id="given-names" data-ng-model="givenNames">
+            </div>
+          </div>
+          <div class="control-group">
+            <label class="control-label" for="surname">Surname</label>
+            <div class="controls">
+              <input required type="text" id="surname" data-ng-model="surname">
+            </div>
+          </div>
+          <div class="control-group">
+            <label class="control-label" for="date-of-birth">Date of Birth</label>
+            <div class="controls">
+              <input required type="text" id="date-of-birth" data-ng-model="dateOfBirth" placeholder="DD/MM/YYYY">
+            </div>
+          </div>
+          <div class="control-group">
+            <label class="control-label" for="gender">Gender</label>
+            <div class="controls">
+              <input type="text" id="gender" data-ng-model="gender">
+            </div>
+          </div>
+
+          <h4>Residential Address</h4>
+          <div class='alert alert-info'>
+            Please enter the address that you are enrolled to vote from with the AEC.
+          </div>
+          <div class="control-group">
+            <label class="control-label" for="residentialAddress">Address</label>
+            <div class="controls">
+              <input required type="text" id="residentialAddress" data-ng-model="residentialAddress">
+            </div>
+          </div>
+          <div class="control-group">
+            <label class="control-label" for="residentialSuburb">Suburb</label>
+            <div class="controls">
+              <input required type="text" id="residentialSuburb" data-ng-model="residentialSuburb">
+            </div>
+          </div>
+          <div class="control-group">
+            <label class="control-label" for="residentialState">State</label>
+            <div class="controls">
+              <input required type="text" id="residentialState" data-ng-model="residentialState">
+            </div>
+          </div>
+          <div class="control-group">
+            <label class="control-label" for="residentialPostcode">Postcode</label>
+            <div class="controls">
+              <input required type="text" id="residentialPostcode" data-ng-model="residentialPostcode">
+            </div>
+          </div>
+          
+          <div class="control-group">
+            <div class="controls">
+              <label class="checkbox">
+                <input type="checkbox" data-ng-model="_postal"> My postal address <strong>differs</strong> to my residential address.
+              </label>
+            </div>
+          </div>
+          <div data-ng-show="_postal == true"> 
+            <h4>Postal Address</h4>
+            <div class="control-group">
+              <label class="control-label" for="postalAddress">Address</label>
+              <div class="controls">
+                <input type="text" id="postalAddress" data-ng-model="postalAddress">
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label" for="postalSuburb">Suburb</label>
+              <div class="controls">
+                <input type="text" id="postalSuburb" data-ng-model="postalSuburb">
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label" for="postalState">State</label>
+              <div class="controls">
+                <input type="text" id="postalState" data-ng-model="postalState">
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label" for="postalPostcode">Postcode</label>
+              <div class="controls">
+                <input type="text" id="postalPostcode" data-ng-model="postalPostcode">
+              </div>
+            </div>
+          </div>
+
+          <h4>Contact Information</h4>
+          <div class="control-group">
+            <label class="control-label" for="email">Email</label>
+            <div class="controls">
+              <input required type="email" id="email" data-ng-model="email">
+            </div>
+          </div>
+          <div class="control-group">
+            <label class="control-label" for="primaryPhone">Primary Phone</label>
+            <div class="controls">
+              <input required type="text" id="primaryPhone" data-ng-model="primaryPhone">
+            </div>
+          </div>
+          <div class="control-group">
+            <label class="control-label" for="secondaryPhone">Secondary Phone</label>
+            <div class="controls">
+              <input type="text" id="secondaryPhone" data-ng-model="secondaryPhone">
+            </div>
+          </div>
+
+        </fieldset>
+        <fieldset>
+          <legend>Declaration and Membership Requirements</legend>
+          <div class='alert alert-info'>
+            <p>I wish to become a member of Pirate Party Australia. I have read and understand the <a href="http://pirateparty.org.au/constitution">Pirate Party Australia Constitution</a> and agree with its platform and principles, and will to the best of my ability work to uphold and promote them.</p>
+  					<p>I am <strong>enrolled for Federal elections</strong>, i.e. I am 16 years of age or older. I am an Australian citizen (or a British citizen who was on the Australian Electoral roll on 25 of January 1984) and I have lived at the above address for at least one month.</p>
+  					<p>I consent to this form being forwarded to the Australian Electoral Commission (AEC) in support of the party's application for registration as a political party.</p>
+  					<div style="text-align: center"><a href="http://www.aec.gov.au/enrol">If you are not enrolled to vote, click here.</a></div>
+          </div>
+          <div class="control-group">
+            <div class="controls">
+              <label class="checkbox">
+                <input required type="checkbox" data-ng-model="declaration"> I confirm that I am enrolled to vote in federal elections and consent to my information being sent to the Australian Electoral Commission.
+              </label>
+            </div>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Other Information</legend>
+          <div class="alert alert-info">
+            <p>Pirate Party Australia may in the future create state branches, and to ease in this process, we would like your consent to include your Pirate Party Australia membership for the registration of any of these branches.</p>
+  					<div>This allows us to ensure that you are represented on the Federal level, the State level and the Local level in elections.</div>
+          </div>  
+          <div class="control-group">
+            <div class="controls">
+              <label class="checkbox">
+                <input type="checkbox" data-ng-model="withdrawConsentForStateBranches"> I would like to <strong>opt-out</strong> of my membership being used for the purposes of registering state branches of Pirate Party Australia.
+              </label>
+              <div data-ng-show="withdrawConsentForStateBranches == true" class="alert alert-danger">You have made the Secretary sad. :(</div>
+            </div>
+          </div>
+          <div class="alert alert-info">
+            <div>Pirate Party Australia does not allow membership of multiple Australian federal political parties. If you wish to sign up to Pirate Party Australia and are currently a member of another party, please resign from that party first before submitting your application.</div>
+          </div>  
+          <div class="control-group">
+            <div class="controls">
+              <label class="checkbox">
+                <input type="checkbox" data-ng-model="recentMemberOfOtherParties"> I <strong>have been</strong> a member of another party within the last 12 months.              
+              </label>
+              <label data-ng-show="recentMemberOfOtherParties == true">Which party? <input type="text" data-ng-model="otherParty"></label>
+            </div>
+          </div>
+          
+        </fieldset>
+        <fieldset>
+          <legend>Payment</legend>
+          <input type="hidden" value="full" data-ng-model="membershipType">
+          <div class="alert alert-info">
+            <p><strong>Full Membership</strong> of Pirate Party Australia is currently <strong>$20</strong>. The entitlements of Full Membership can be found in Article 3.1.2 of the <a href="http://pirateparty.org.au/constitution">Party Constitution</a>.</p> 
+  
+            <p><em>Due to the recent party registration, we are experiencing a
+                higher than normal load and will contact you soon regarding
+                payment options. Apologies for any inconvenience caused. Your
+                membership will be activated immediately upon completion of this application.</em></p>
+            <p>Pirate Party Australia is fully member funded. <a target="_blank" href="http://pirateparty.org.au/donate">If you wish to make a donation, please click here</a>.</p>
+          </div>
+        </fieldset>
+        <fieldset>
+          <div class="control-group">
+            <div class="controls">
+              <label class="checkbox">
+                <input required type="checkbox" data-ng-model="submission"> I declare the information provided on this form to be true and complete.
+              </label>
+            </div>
+          </div>
+          <div style="text-align: center" class='alert alert-danger'>
+            Please ensure all the data you have entered is correct before hitting submit. It is a serious offence to make a false declaration.
+            <br><br>
+            <button class="btn btn-primary" type='button' data-ng-click="submit()">Submit</button>
+          </div>
+        </fieldset>
+
+      </form>
+    </div>
+  </body>
+</html>
