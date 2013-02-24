@@ -24,16 +24,12 @@ function JoinCtrl($scope) {
                 data: {"data": JSON.stringify(out)},
             }).fail(function() {
                 $("#completed").find(".alert").removeClass('alert-info').addClass('alert-danger')
-                    .html("For some reason, the form had an error. Please contact the Secretary for assistance.")
+                    .html("For some reason, the form had an error. Please contact the <a href='mailto:membership@pirateparty.org.au'>Secretary</a> for assistance.")
             }).always(function(data) {
                 $("form").addClass('hidden');
                 $("#completed").removeClass('hidden');
             });
         }
-        console.log(node);
-        console.log(out);
-
-
     }
 
     $scope.membership_level = "full";
