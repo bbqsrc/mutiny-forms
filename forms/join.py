@@ -238,17 +238,17 @@ class JoinFormHandler(tornado.web.RequestHandler):
         data = self.validate(self.get_argument('data', None))
         member_record = self.create_member_record(data)
         sent = self.create_and_send_invoice(member_record['details'], member_record['invoices'][0])
-        self.db.members.insert(member_record)
+        self.db.members.insert(member_record, safe=True)
         if not sent:
             raise HTTPError(500, "invoice failed to send")
 
     def _get_counter(self, name):
         record = self.db.counters.find_one({"_id": name})
         if record is None:
-            self.db.counters.insert({"_id": name, "count": 1})
+            self.db.counters.insert({"_id": name, "count": 1}, safe=True)
             return 1
         else:
-            self.db.counters.update({"_id": name}, {"$inc": {"count": 1}})
+            self.db.counters.update({"_id": name}, {"$inc": {"count": 1}}, safe=True)
             return record['count'] + 1
 
 
