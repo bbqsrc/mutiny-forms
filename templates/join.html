@@ -250,13 +250,13 @@
           <div>
             <p>Please select payment method:</p>
             <label class="radio">
-              <input type="radio" checked name="payment_method" value="paypal"> PayPal (including Credit/Debit Card)
+              <input type="radio" checked name="payment_method" data-ng-model="payment_method" value="paypal"> PayPal (including Credit/Debit Card)
             </label> 
             <label class="radio">
-              <input type="radio" name="payment_method" value="direct_deposit"> Direct Deposit 
+              <input type="radio" name="payment_method" data-ng-model="payment_method" value="direct_deposit"> Direct Deposit 
             </label> 
             <label class="radio">
-              <input type="radio" name="payment_method" value="cheque"> Cheque
+              <input type="radio" name="payment_method" data-ng-model="payment_method" value="cheque"> Cheque
             </label>
           </div>
           <div class="alert">

@@ -9,18 +9,28 @@ import pymongo
 import tornado.options
 import tornado.web
 
+from invoice import Invoice
+from bbqutils.email import Mailer, create_attachment
 from mutiny_paypal import PayPalAPI
 from bson.json_util import dumps
 from pymongo import Connection
 from tornado.web import Application, HTTPError, RequestHandler, StaticFileHandler
 
+class Mailer:
+    def __init__(self, *args, **kwargs): pass
+    def connect(self): pass
+    def send_email(self, *args, **kwargs): pass
+
 class JoinFormHandler(tornado.web.RequestHandler):
     def initialize(self):
         self.name = "join"
-        self.config = yaml.load(open('paypal.conf.yml'))['live']
+        self.invoice_email = open('invoice-email.txt').read()
+        self.config = yaml.load(open('paypal.conf.yml'))['development']
         self.paypal = PayPalAPI(self.config)
         self.db = Connection().ppau
         self.mutiny = Connection().mutiny
+        self.mailer = Mailer()
+        self.mailer.connect()
 
     def validate(self, data):
         try:
@@ -109,7 +119,10 @@ class JoinFormHandler(tornado.web.RequestHandler):
         if membership_level == "full":
             price = 2000
 
-        return {
+        issued_date = datetime.datetime.utcnow()
+        due_date = issued_date + datetime.timedelta(days=30)
+
+        out = {
             "v": 1,
             "ts": datetime.datetime.utcnow(),
             "items": [{
@@ -118,8 +131,14 @@ class JoinFormHandler(tornado.web.RequestHandler):
                 "price": price
             }],
             "payment_method": payment_method,
-            "reference": "FM%s" % self._get_counter('new_member')
+            "due_date": due_date,
+            "issued_date": issued_date
         }
+
+        if payment_method != "paypal":
+            out["reference"] = "FM%s" % self._get_counter('new_member')
+
+        return out
 
     def create_and_send_invoice(self, member, invoice):
         if invoice['payment_method'] == "paypal":
@@ -134,18 +153,77 @@ class JoinFormHandler(tornado.web.RequestHandler):
                 member['residential_postcode']
             )
 
-            logging.debug(self.paypal.create_and_send_invoice(
+            response = self.paypal.create_and_send_invoice(
                 self.config['email'],
                 member['email'],
                 self.paypal.get_merchant_info(),
                 biller_info,
-                self.paypal.create_invoice_item(invoice['items'][0]['item'], str(invoice['items'][0]['price']/100))
+                self.paypal.create_invoice_item(invoice['items'][0]['item'], str(invoice['items'][0]['price']/100)),
                 payment_terms="Net30"
-            ))
-        elif invoice['payment_method'] == "direct_deposit":
-            pass
-        elif invoice['payment_method'] == "cheque":
-            pass
+            )
+
+            if response['responseEnvelope']['ack'].startswith("Success"):
+                invoice['reference'] = response['invoiceID']
+
+        elif invoice['payment_method'] in ("direct_deposit", "cheque"):
+            personal = {
+              "name": "Pirate Party Australia Incorporated",
+              "address": [],
+              "contact": {
+                "Email": "membership@pirateparty.org.au",
+                "Website": "<a href='http://pirateparty.org.au'>http://pirateparty.org.au</a>"
+              },
+              "business_number": "99 462 965 754",
+              "payment_methods": [
+                {
+                  "Direct Deposit": [
+                    "Name: Pirate Party Australia Incorporated",
+                    "BSB: 633000",
+                    "Account number: 138718051"
+                  ]
+                }, {
+                  "Cheque": [
+                    "Address:",
+                    "Pirate Party Australia",
+                    "PO Box Q1715",
+                    "Queen Victoria Building NSW 1230"
+                  ]
+                }
+              ]
+            }
+
+            invoice = {
+                "regarding": "Full Membership",
+                "name": "%s %s" % (member['given_names'], member['surname']),
+                "reference": invoice['reference'],
+                "items": [
+                  {
+                    "rate_price": invoice['items'][0]['price'],
+                    "tax": "0",
+                    "description": invoice['items'][0]['item'],
+                    "hours_qty": "1"
+                  }
+                ],
+                "already_paid": "0",
+                "details": "",
+                "address": [
+                  member['residential_address'],
+                  "%s %s %s" % (member['residential_suburb'],
+                      member['residential_state'], member['residential_postcode'])
+                ],
+                "date": invoice['issued_date'].strftime("%d/%m/%Y"),
+                "message": "Thanks for joining Pirate Party Australia!",
+                "payment_due": invoice['due_date'].strftime("%d/%m/%Y")
+            }
+
+            pdf_data = Invoice(invoice, personal).to_pdf()
+            self.mailer.send_email(
+                    frm="membership@pirateparty.org.au",
+                    to="%s %s <%s>" % (member['given_names'], member['surname'], member['email']),
+                    subject="Pirate Party Membership Invoice (%s)" % invoice['reference'],
+                    body=self.invoice_email.format(name=member['given_names'].split(" ")[0]),
+                    attachments=[create_attachment("ppau-invoice.pdf", pdf_data)]
+            )
         else:
             raise Exception("How did you even get here?")
 
@@ -156,7 +234,7 @@ class JoinFormHandler(tornado.web.RequestHandler):
         data = self.validate(self.get_argument('data', None))
         member_record = self.create_member_record(data)
         self.create_and_send_invoice(member_record['details'], member_record['invoices'][0])
-        self.write("<pre>" + dumps(member_record, indent=2) + "</pre>")
+        self.db.members.insert(member_record)
 
     def _get_counter(self, name):
         record = self.db.counters.find_one({"_id": name})
