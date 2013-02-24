@@ -34,4 +34,5 @@ function JoinCtrl($scope) {
 
     $scope.membership_level = "full";
     $scope.payment_method = "paypal";
+    $scope._states = ["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"];
 }

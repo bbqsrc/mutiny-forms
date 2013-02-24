@@ -127,7 +127,9 @@
           <div class="control-group">
             <label class="control-label" for="residentialState">State</label>
             <div class="controls">
-              <input required type="text" id="residentialState" data-ng-model="residential_state">
+              <select required type="text" id="residentialState" data-ng-model="residential_state" data-ng-options="state for state in _states">
+                <option value=""></option>
+              </select>
               <span class="help-inline">This field is required</span>
             </div>
           </div>
@@ -163,7 +165,9 @@
             <div class="control-group">
               <label class="control-label" for="postalState">State</label>
               <div class="controls">
-                <input type="text" id="postalState" data-ng-model="postal_state">
+                <select required type="text" id="postalState" data-ng-model="postal_state" data-ng-options="state for state in _states">
+                  <option value=""></option>
+                </select>
               </div>
             </div>
             <div class="control-group">
