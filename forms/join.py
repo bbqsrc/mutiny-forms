@@ -160,6 +160,9 @@ class JoinFormHandler(tornado.web.RequestHandler):
 
             if response['responseEnvelope']['ack'].startswith("Success"):
                 invoice['reference'] = response['invoiceID']
+                return True
+            else:
+                return False
 
         elif invoice['payment_method'] in ("direct_deposit", "cheque"):
             personal = {
@@ -213,13 +216,18 @@ class JoinFormHandler(tornado.web.RequestHandler):
             }
 
             pdf_data = Invoice(invoice, personal).to_pdf()
-            self.mailer.send_email(
+            try:
+                self.mailer.send_email(
                     frm="membership@pirateparty.org.au",
                     to="%s %s <%s>" % (member['given_names'], member['surname'], member['email']),
                     subject="Pirate Party Membership Invoice (%s)" % invoice['reference'],
                     body=self.invoice_email.format(name=member['given_names'].split(" ")[0]),
                     attachments=[create_attachment("ppau-invoice.pdf", pdf_data)]
-            )
+                )
+                return True
+            except:
+                pass
+            return False
         else:
             raise Exception("How did you even get here?")
 
@@ -229,8 +237,10 @@ class JoinFormHandler(tornado.web.RequestHandler):
     def post(self):
         data = self.validate(self.get_argument('data', None))
         member_record = self.create_member_record(data)
-        self.create_and_send_invoice(member_record['details'], member_record['invoices'][0])
+        sent = self.create_and_send_invoice(member_record['details'], member_record['invoices'][0])
         self.db.members.insert(member_record)
+        if not sent:
+            raise HTTPError(500, "invoice failed to send")
 
     def _get_counter(self, name):
         record = self.db.counters.find_one({"_id": name})
