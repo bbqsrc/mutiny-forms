@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Pirate Party Australia - Preselection Nomination Form 2013</title>
+    <title>Pirate Party Australia - Membership Application</title>
     <link rel="stylesheet" type="text/css" href="../static/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="../static/bootstrap-responsive.min.css">
     <link rel="stylesheet" type="text/css" href="../static/webfonts.css">
@@ -31,12 +31,30 @@
         max-width: 860px;
         box-shadow: 0px 0px 25px black;
       }
+      .checkbox, .radio {
+        margin-left: 3em;
+      }
+      .alert {
+        margin-top: 1em;
+        margin-bottom: 1em;
+      }
+      .noscript {
+        display: none;
+      }
+
+      .controls .help-inline { display: none; }
+
+      .ng-dirty.ng-invalid-required + .help-inline {
+        display: inline-block;
+        color: #b94a48;
+      }
     </style>
     <meta name="robots" content="noindex,nofollow">
     <base target="_blank">
   </head>
   <body>
-    <div class='container' data-ng-controller="JoinCtrl">
+    <noscript>This form requires JavaScript.</noscript>
+    <div class='container noscript' data-ng-controller="JoinCtrl">
       <div style='min-height: 80px'>
         <h1>
           <a href="http://pirateparty.org.au" class="logo">
@@ -47,12 +65,13 @@
           </a>
         </h1>
       </div>
-      <div class='alert alert-info'>
+      <form>
+        {% block form %}{% end %}
+        <div class='alert alert-info'>
           This information will be used for the purposes of registering a political party with the Australian Electoral Commission.
           <a href="http://pirateparty.org.au/privacy">Privacy Policy</a>
-      </div>  
-      <form class="form-horizontal">
-        <fieldset>
+        </div>  
+        <fieldset class="form-horizontal">
           <legend>Details of Applicant</legend>
           <h4>Personal Information</h4>
           <div class='alert alert-info'>
@@ -61,19 +80,23 @@
           <div class="control-group">
             <label class="control-label" for="given-names">Given name(s)</label>
             <div class="controls">
-              <input required type="text" id="given-names" data-ng-model="givenNames">
+              <input required type="text" id="given-names" data-ng-model="given_names">
+              <span class="help-inline">This field is required</span>
             </div>
           </div>
           <div class="control-group">
             <label class="control-label" for="surname">Surname</label>
             <div class="controls">
               <input required type="text" id="surname" data-ng-model="surname">
+              <span class="help-inline">This field is required</span>
             </div>
           </div>
           <div class="control-group">
             <label class="control-label" for="date-of-birth">Date of Birth</label>
             <div class="controls">
-              <input required type="text" id="date-of-birth" data-ng-model="dateOfBirth" placeholder="DD/MM/YYYY">
+              <!-- We know this regex isn't entirely accurate. -->
+              <input required type="text" id="date-of-birth" pattern="^\d\d?/\d\d?/\d{4}$" data-ng-model="date_of_birth" placeholder="DD/MM/YYYY">
+              <span class="help-inline">This field is required</span>
             </div>
           </div>
           <div class="control-group">
@@ -90,25 +113,29 @@
           <div class="control-group">
             <label class="control-label" for="residentialAddress">Address</label>
             <div class="controls">
-              <input required type="text" id="residentialAddress" data-ng-model="residentialAddress">
+              <input required type="text" id="residentialAddress" data-ng-model="residential_address">
+              <span class="help-inline">This field is required</span>
             </div>
           </div>
           <div class="control-group">
             <label class="control-label" for="residentialSuburb">Suburb</label>
             <div class="controls">
-              <input required type="text" id="residentialSuburb" data-ng-model="residentialSuburb">
+              <input required type="text" id="residentialSuburb" data-ng-model="residential_suburb">
+              <span class="help-inline">This field is required</span>
             </div>
           </div>
           <div class="control-group">
             <label class="control-label" for="residentialState">State</label>
             <div class="controls">
-              <input required type="text" id="residentialState" data-ng-model="residentialState">
+              <input required type="text" id="residentialState" data-ng-model="residential_state">
+              <span class="help-inline">This field is required</span>
             </div>
           </div>
           <div class="control-group">
             <label class="control-label" for="residentialPostcode">Postcode</label>
             <div class="controls">
-              <input required type="text" id="residentialPostcode" data-ng-model="residentialPostcode">
+              <input required type="text" id="residentialPostcode" data-ng-model="residential_postcode">
+              <span class="help-inline">This field is required</span>
             </div>
           </div>
           
@@ -124,25 +151,25 @@
             <div class="control-group">
               <label class="control-label" for="postalAddress">Address</label>
               <div class="controls">
-                <input type="text" id="postalAddress" data-ng-model="postalAddress">
+                <input type="text" id="postalAddress" data-ng-model="postal_address">
               </div>
             </div>
             <div class="control-group">
               <label class="control-label" for="postalSuburb">Suburb</label>
               <div class="controls">
-                <input type="text" id="postalSuburb" data-ng-model="postalSuburb">
+                <input type="text" id="postalSuburb" data-ng-model="postal_suburb">
               </div>
             </div>
             <div class="control-group">
               <label class="control-label" for="postalState">State</label>
               <div class="controls">
-                <input type="text" id="postalState" data-ng-model="postalState">
+                <input type="text" id="postalState" data-ng-model="postal_state">
               </div>
             </div>
             <div class="control-group">
               <label class="control-label" for="postalPostcode">Postcode</label>
               <div class="controls">
-                <input type="text" id="postalPostcode" data-ng-model="postalPostcode">
+                <input type="text" id="postalPostcode" data-ng-model="postal_postcode">
               </div>
             </div>
           </div>
@@ -151,19 +178,21 @@
           <div class="control-group">
             <label class="control-label" for="email">Email</label>
             <div class="controls">
-              <input required type="email" id="email" data-ng-model="email">
+              <input required type="text" id="email" pattern=".*@.*" data-ng-model="email">
+              <span class="help-inline">This field is required</span>
             </div>
           </div>
           <div class="control-group">
             <label class="control-label" for="primaryPhone">Primary Phone</label>
             <div class="controls">
-              <input required type="text" id="primaryPhone" data-ng-model="primaryPhone">
+              <input required type="text" id="primaryPhone" data-ng-model="primary_phone">
+              <span class="help-inline">This field is required</span>
             </div>
           </div>
           <div class="control-group">
             <label class="control-label" for="secondaryPhone">Secondary Phone</label>
             <div class="controls">
-              <input type="text" id="secondaryPhone" data-ng-model="secondaryPhone">
+              <input type="text" id="secondaryPhone" data-ng-model="secondary_phone">
             </div>
           </div>
 
@@ -180,6 +209,7 @@
             <div class="controls">
               <label class="checkbox">
                 <input required type="checkbox" data-ng-model="declaration"> I confirm that I am enrolled to vote in federal elections and consent to my information being sent to the Australian Electoral Commission.
+                <span class="help-inline">This field is required</span>
               </label>
             </div>
           </div>
@@ -193,7 +223,7 @@
           <div class="control-group">
             <div class="controls">
               <label class="checkbox">
-                <input type="checkbox" data-ng-model="withdrawConsentForStateBranches"> I would like to <strong>opt-out</strong> of my membership being used for the purposes of registering state branches of Pirate Party Australia.
+                <input type="checkbox" data-ng-model="opt_out_state_parties"> I would like to <strong>opt-out</strong> of my membership being used for the purposes of registering state branches of Pirate Party Australia.
               </label>
               <div data-ng-show="withdrawConsentForStateBranches == true" class="alert alert-danger">You have made the Secretary sad. :(</div>
             </div>
@@ -204,23 +234,34 @@
           <div class="control-group">
             <div class="controls">
               <label class="checkbox">
-                <input type="checkbox" data-ng-model="recentMemberOfOtherParties"> I <strong>have been</strong> a member of another party within the last 12 months.              
+                <input type="checkbox" data-ng-model="_recentMemberOfOtherParties"> I <strong>have been</strong> a member of another party within the last 12 months.              
               </label>
-              <label data-ng-show="recentMemberOfOtherParties == true">Which party? <input type="text" data-ng-model="otherParty"></label>
+              <label data-ng-show="_recentMemberOfOtherParties == true">Which party? <input type="text" data-ng-model="other_party_in_last_12_months"></label>
             </div>
           </div>
           
         </fieldset>
         <fieldset>
           <legend>Payment</legend>
-          <input type="hidden" value="full" data-ng-model="membershipType">
+          <input type="hidden" value="full" data-ng-model="membership_level">
           <div class="alert alert-info">
             <p><strong>Full Membership</strong> of Pirate Party Australia is currently <strong>$20</strong>. The entitlements of Full Membership can be found in Article 3.1.2 of the <a href="http://pirateparty.org.au/constitution">Party Constitution</a>.</p> 
-  
-            <p><em>Due to the recent party registration, we are experiencing a
-                higher than normal load and will contact you soon regarding
-                payment options. Apologies for any inconvenience caused. Your
-                membership will be activated immediately upon completion of this application.</em></p>
+          </div>
+          <div>
+            <p>Please select payment method:</p>
+            <label class="radio">
+              <input type="radio" checked name="payment_method" value="paypal"> PayPal (including Credit/Debit Card)
+            </label> 
+            <label class="radio">
+              <input type="radio" name="payment_method" value="direct_deposit"> Direct Deposit 
+            </label> 
+            <label class="radio">
+              <input type="radio" name="payment_method" value="cheque"> Cheque
+            </label>
+          </div>
+          <div class="alert">
+            <p>An invoice will be sent by email. For direct deposit and cheque, please enter the reference number found in the email when you make your invoice.</p>
+
             <p>Pirate Party Australia is fully member funded. <a target="_blank" href="http://pirateparty.org.au/donate">If you wish to make a donation, please click here</a>.</p>
           </div>
         </fieldset>
@@ -229,17 +270,23 @@
             <div class="controls">
               <label class="checkbox">
                 <input required type="checkbox" data-ng-model="submission"> I declare the information provided on this form to be true and complete.
+                <span class="help-inline">This field is required</span>
               </label>
             </div>
           </div>
+          <hr>
           <div style="text-align: center" class='alert alert-danger'>
             Please ensure all the data you have entered is correct before hitting submit. It is a serious offence to make a false declaration.
             <br><br>
             <button class="btn btn-primary" type='button' data-ng-click="submit()">Submit</button>
           </div>
         </fieldset>
-
       </form>
+      <div id='completed' class='hidden'>
+        <div class='alert alert-info'>Your application was submitted successfully. You should receive an email confirming the receipt of your application and an invoice in the next 10 minutes.<br><br>If you don't receive that email, please contact <a href="mailto:membership@pirateparty.org.au">membership@pirateparty.org.au</a>.</div>
+        <a class='btn btn-info' href="http://pirateparty.org.au">Return to Pirate Party Australia</a>
+      </div>
     </div>
+    <script>$(".noscript").removeClass('noscript')</script>
   </body>
 </html>
