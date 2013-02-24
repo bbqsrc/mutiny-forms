@@ -16,10 +16,6 @@ from bson.json_util import dumps
 from pymongo import Connection
 from tornado.web import Application, HTTPError, RequestHandler, StaticFileHandler
 
-class Mailer:
-    def __init__(self, *args, **kwargs): pass
-    def connect(self): pass
-    def send_email(self, *args, **kwargs): pass
 
 class JoinFormHandler(tornado.web.RequestHandler):
     def initialize(self):
