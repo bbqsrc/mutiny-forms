@@ -17,6 +17,32 @@ from pymongo import Connection
 from tornado.web import Application, HTTPError, RequestHandler, StaticFileHandler
 
 
+def mongo_safe_insert(collection, data):
+    for attempt in range(5):
+        try:
+            collection.insert(data, safe=True)
+            return True
+        except pymongo.errors.OperationFailure:
+            return False
+        except pymongo.errors.AutoReconnect as e:
+            wait_t = 0.5 * pow(2, attempt)
+            time.sleep(wait_t)
+    return False
+
+
+def mongo_safe_update(collection, query, data):
+    for attempt in range(5):
+        try:
+            collection.update(query, data, safe=True)
+            return True
+        except pymongo.errors.OperationFailure:
+            return False
+        except pymongo.errors.AutoReconnect as e:
+            wait_t = 0.5 * pow(2, attempt)
+            time.sleep(wait_t)
+    return False
+
+
 class JoinFormHandler(tornado.web.RequestHandler):
     def initialize(self):
         self.name = "join"
@@ -132,6 +158,9 @@ class JoinFormHandler(tornado.web.RequestHandler):
         }
 
         if payment_method != "paypal":
+            c = self._get_counter('new_member')
+            if c is None:
+                raise HTTPError(500, "mongodb keeled over at counter time")
             out["reference"] = "FM%s" % self._get_counter('new_member')
 
         return out
@@ -238,17 +267,20 @@ class JoinFormHandler(tornado.web.RequestHandler):
         data = self.validate(self.get_argument('data', None))
         member_record = self.create_member_record(data)
         sent = self.create_and_send_invoice(member_record['details'], member_record['invoices'][0])
-        self.db.members.insert(member_record, safe=True)
+        if not mongo_safe_insert(self.db.members, member_record):
+            raise HTTPError(500, "mongodb keeled over")
         if not sent:
             raise HTTPError(500, "invoice failed to send")
 
     def _get_counter(self, name):
         record = self.db.counters.find_one({"_id": name})
         if record is None:
-            self.db.counters.insert({"_id": name, "count": 1}, safe=True)
+            if not mongo_safe_insert(self.db.counters, {"_id": name, "count": 1}):
+                return None
             return 1
         else:
-            self.db.counters.update({"_id": name}, {"$inc": {"count": 1}}, safe=True)
+            if not mongo_safe_update(self.db.counters, {"_id": name}, {"$inc": {"count": 1}}):
+                return None
             return record['count'] + 1
 
 
