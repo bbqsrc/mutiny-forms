@@ -17,8 +17,25 @@ from bson.json_util import dumps
 from pymongo import Connection
 from tornado.web import Application, HTTPError, RequestHandler, StaticFileHandler
 
+def safe_modify(col, query, update, upsert=False):
+    for attempt in range(5):
+        try:
+            result = col.find_and_modify(
+                    query=query,
+                    update=update,
+                    upsert=upsert,
+                    new=True
+            )
+            return result
+        except pymongo.errors.OperationFailure:
+            return False
+        except pymongo.errors.AutoReconnect as _e:
+            wait_t = 0.5 * pow(2, attempt)
+            time.sleep(wait_t)
+    return False
 
-def mongo_safe_insert(collection, data):
+
+def safe_insert(collection, data):
     for attempt in range(5):
         try:
             collection.insert(data, safe=True)
@@ -31,20 +48,7 @@ def mongo_safe_insert(collection, data):
     return False
 
 
-def mongo_safe_update(collection, query, data):
-    for attempt in range(5):
-        try:
-            collection.update(query, data, safe=True)
-            return True
-        except pymongo.errors.OperationFailure:
-            return False
-        except pymongo.errors.AutoReconnect as e:
-            wait_t = 0.5 * pow(2, attempt)
-            time.sleep(wait_t)
-    return False
-
-
-class JoinFormHandler(tornado.web.RequestHandler):
+class NewMemberFormHandler(tornado.web.RequestHandler):
     def initialize(self):
         self.name = "join"
         self.invoice_email = open('invoice-email.txt').read()
@@ -62,27 +66,37 @@ class JoinFormHandler(tornado.web.RequestHandler):
             raise HTTPError(400, "invalid form data")
 
         cleaned = {}
-        fields = [
+        mandatory_fields = [
             'given_names', 'surname', 'date_of_birth', 'residential_address',
             'residential_postcode', 'residential_state', 'residential_suburb',
             'submission', 'declaration', 'email', 'primary_phone',
             'membership_level', 'payment_method'
         ]
 
-        for field in fields:
+        optional_fields = [
+            'gender', 'postal_address', 'postal_postcode', 'postal_state',
+            'postal_suburb', 'secondary_phone', 'opt_out_state_parties',
+            'other_party_in_last_12_months'
+        ]
+
+        for field in mandatory_fields:
             if field in form_data.keys():
                 cleaned[field] = form_data[field]
             else:
                 raise HTTPError(400, "missing fields: %s" % field)
 
+        for field in optional_fields:
+            if field in form_data.keys():
+                cleaned[field] = form_data[field]
+
         if cleaned['membership_level'] != "full":
-            raise HTTPError(400, "invalid form data")
+            raise HTTPError(400, "invalid membership level")
 
         if cleaned['payment_method'] not in ("paypal", "direct_deposit", "cheque"):
-            raise HTTPError(400, "invalid form data")
+            raise HTTPError(400, "invalid payment method")
 
         if cleaned['declaration'] != True or cleaned['submission'] != True:
-            raise HTTPError(400, "invalid form data")
+            raise HTTPError(400, "invalid declaration or submission flag")
 
         try:
             cleaned['date_of_birth'] = datetime.datetime.strptime(cleaned['date_of_birth'], "%d/%m/%Y")
@@ -261,6 +275,21 @@ class JoinFormHandler(tornado.web.RequestHandler):
         else:
             raise Exception("How did you even get here?")
 
+    def send_admin_message(self, member_record):
+        member = member_record['details']
+        msg = "New member: %s %s [%s] (%s)" % (member['given_names'],
+                member['surname'], member['email'], member['residential_state'])
+        id = member_record['_id'].hex
+
+        self.mailer.send_email(
+                frm=member['email'],
+                to='secretary@pirateparty.org.au',
+                subject=msg,
+                body=id
+        )
+        logging.info("New member: %s %s" % (msg, id))
+        logging.debug(dumps(member_record, indent=2))
+
     def get(self):
         self.render(self.name + '.html')
 
@@ -268,29 +297,124 @@ class JoinFormHandler(tornado.web.RequestHandler):
         data = self.validate(self.get_argument('data', None))
         member_record = self.create_member_record(data)
         sent = self.create_and_send_invoice(member_record['details'], member_record['invoices'][0])
-        if not mongo_safe_insert(self.db.members, member_record):
+        if not safe_insert(self.db.members, member_record):
             raise HTTPError(500, "mongodb keeled over")
         if not sent:
             raise HTTPError(500, "invoice failed to send")
+        self.send_admin_message(member_record)
 
     def _get_counter(self, name):
-        record = self.db.counters.find_one({"_id": name})
-        if record is None:
-            if not mongo_safe_insert(self.db.counters, {"_id": name, "count": 1}):
-                return None
-            return 1
-        else:
-            if not mongo_safe_update(self.db.counters, {"_id": name}, {"$inc": {"count": 1}}):
-                return None
-            return record['count'] + 1
+        record = safe_modify(self.db.counters, {"_id": name}, {"$inc": {"count": 1}}, True)
+        if record != False:
+            return record['count']
+
+class UpdateMemberFormHandler(NewMemberFormHandler):
+    def validate(self, data):
+        try:
+            form_data = json.loads(data)
+        except:
+            raise HTTPError(400, "invalid form data")
+
+        cleaned = {}
+        mandatory_fields = [
+            'given_names', 'surname', 'date_of_birth', 'residential_address',
+            'residential_postcode', 'residential_state', 'residential_suburb',
+            'email', 'primary_phone'
+        ]
+
+        optional_fields = [
+            'gender', 'postal_address', 'postal_postcode', 'postal_state',
+            'postal_suburb', 'secondary_phone'
+        ]
+
+        for field in mandatory_fields:
+            if field in form_data.keys():
+                cleaned[field] = form_data[field]
+            else:
+                raise HTTPError(400, "missing fields: %s" % field)
+
+        for field in optional_fields:
+            if field in form_data.keys():
+                cleaned[field] = form_data[field]
+
+        try:
+            cleaned['date_of_birth'] = datetime.datetime.strptime(cleaned['date_of_birth'], "%d/%m/%Y")
+        except:
+            raise HTTPError(400, "invalid form data")
+
+        return cleaned
+
+    def send_update_confirmation(self, member_record):
+        return
+
+    def send_admin_message(self, member_record):
+        member = member_record['details']
+        msg = "Updated member: %s %s [%s] (%s)" % (member['given_names'],
+                member['surname'], member['email'], member['residential_state'])
+        id = member_record['_id'].hex
+
+        self.mailer.send_email(
+                frm=member['email'],
+                to='secretary@pirateparty.org.au',
+                subject=msg,
+                body=id
+        )
+        logging.info("Updated member: %s %s" % (msg, id))
+        logging.debug(dumps(member_record, indent=2))
+
+    def merge_data(self, data, member_record):
+        history = {
+            "v": 1,
+            "details": data,
+            "ts": datetime.datetime.utcnow(),
+            "action": "update"
+        }
+        member_record['history'].append(history)
+
+        for k, v in data.items():
+            member_record['details'][k] = v
+
+        return member_record
+
+    def get(self, id):
+        try:
+            id = uuid.UUID(id)
+        except:
+            self.render(self.name + "-notfound.html")
+            return
+
+        if not self.db.members.find_one({"_id": id}):
+            self.render(self.name + "-notfound.html")
+            return
+
+        self.render(self.name + ".html")
+
+    def post(self, id):
+        try:
+            id = uuid.UUID(id)
+        except:
+            raise HTTPError(400, "invalid ID")
+
+        member_record = self.db.members.find_one({"_id": id})
+        if not member_record:
+            raise HTTPError(403, "no member found by id")
+
+        data = self.validate(self.get_argument('data', None))
+        member_record = self.merge_data(data, member_record)
+
+        if not safe_modify(self.db.members, {"_id": id}, member_record):
+            raise HTTPError(500, "mongodb keeled over on update")
+        self.send_admin_message(member_record)
+
 
 
 if __name__ == "__main__":
     tornado.options.parse_command_line()
     application = Application([
-        (r"/", JoinFormHandler),
+        (r"/", NewMemberFormHandler),
+        (r"/update/(.*)", UpdateMemberFormHandler),
         (r"/static/(.*)", StaticFileHandler, {"path": "../static"})
     ], **{"template_path": "../templates"})
-    application.listen(27017)
+    application.listen(27013)
     tornado.ioloop.IOLoop.instance().start()
 
