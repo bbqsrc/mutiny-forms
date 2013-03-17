@@ -8,7 +8,7 @@ function JoinCtrl($scope) {
     } else {
         $scope._mode = "new";
     }
-    $scope._title = $scope.mode == "new" ? "New Member" : "Membership Update";
+    $scope._title = $scope._mode == "new" ? "New Member" : "Membership Update";
     $scope.submit = function() {
         var prop, node,
             out = {};
