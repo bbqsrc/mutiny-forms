@@ -131,8 +131,8 @@ class JoinFormTests(Test):
             member_record = self.test.handler.create_member_record(fields)
             return True
 
-    class Mailer(Description):
-        """Mailer-related stuff"""
+    class Invoicing(Description):
+        """Invoice related stuff"""
 
         def before_each_test(self):
             self.required = self.test.required.copy()
@@ -167,6 +167,13 @@ class JoinFormTests(Test):
             )
             return len(self.test.handler.paypal.create_and_send_invoice.mock_calls) > 0
 
+
+        def it_should_send_out_welcome_email_to_new_members(self):
+            """It should send out welcome email to new members"""
+            return False
+
+        def it_should_handle_ipn(self):
+            """It should handle instant payment notification"""
 
     class POST(Description):
         """POST related stuff"""
