@@ -21,9 +21,15 @@
 .logo-bold-blue {
   font-weight: bold;
   color: #0073ae;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .logo-australia {
   font-size: .65em;
   color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
