@@ -298,7 +298,7 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
                 frm=member['email'],
                 to='secretary@pirateparty.org.au',
                 subject=msg,
-                body=id
+                text=id
         )
         logging.info("New member: %s %s" % (msg, id))
         logging.debug(dumps(member_record, indent=2))
@@ -380,7 +380,7 @@ class UpdateMemberFormHandler(NewMemberFormHandler):
                 frm=member['email'],
                 to='secretary@pirateparty.org.au',
                 subject=msg,
-                body=id
+                text=id
         )
         logging.info("%s %s" % (msg, id))
         logging.debug(dumps(member_record, indent=2))
@@ -460,7 +460,7 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
                 frm=member['email'],
                 to='secretary@pirateparty.org.au',
                 subject=msg,
-                body="%s\n%s" % (id, member_record['invoices'][0]['payment_method'])
+                text="%s\n%s" % (id, member_record['invoices'][0]['payment_method'])
         )
         logging.info("%s %s" % (msg, id))
         logging.debug(dumps(member_record, indent=2))
