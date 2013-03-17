@@ -1,7 +1,13 @@
 angular.module("joinForm", []);
 
 function JoinCtrl($scope) {
-    $scope._mode = /^\/update/.test(location.pathname) ? "update" : "new";
+    if (/^\/update/.test(location.pathname)) {
+        $scope._mode = "update";
+    } else if (/^\/payment/.test(location.pathname)) {
+        $scope._mode = "payment";
+    } else {
+        $scope._mode = "new";
+    }
     $scope._title = $scope.mode == "new" ? "New Member" : "Membership Update";
     $scope.submit = function() {
         var prop, node,
@@ -53,7 +59,7 @@ function JoinCtrl($scope) {
     $scope.payment_method = "paypal";
     $scope._states = ["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"];
 
-    if ($scope._mode == "new") {
+    if ($scope._mode == "new" || $scope._mode == "payment") {
         $scope._msg = "Your application was submitted successfully. You should receive an email confirming the receipt of your application and an invoice in the next 10 minutes.<br><br>If you don't receive that email, please contact <a href='mailto:membership@pirateparty.org.au'>membership@pirateparty.org.au</a>.";
     } else {
         $scope._msg = "Your information has been successfully updated. Thanks!";

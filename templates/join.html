@@ -72,7 +72,7 @@
           <a href="http://pirateparty.org.au/privacy">Privacy Policy</a>
         </div>  
         <h2 data-ng-bind="_title"></h2>
-        <fieldset class="form-horizontal">
+        <fieldset class="form-horizontal" data-ng-show="_mode != 'payment'">
           <legend>Details of Applicant</legend>
           <h4>Personal Information</h4>
           <div class='alert alert-info'>
@@ -246,7 +246,7 @@
           </div>
           
         </fieldset>
-        <fieldset data-ng-show="_mode == 'new'">
+        <fieldset data-ng-show="_mode == 'new' || _mode == 'payment'">
           <legend>Payment</legend>
           <input type="hidden" value="full" data-ng-model="membership_level">
           <div class="alert alert-info">
@@ -289,8 +289,8 @@
         </fieldset>
       </form>
       <div id='completed' class='hidden'>
-        <div class='alert alert-info' data-ng-bind="_msg"></div>
-        <a class='btn btn-info' href="http://pirateparty.org.au">Return to Pirate Party Australia</a>
+        <div class='alert alert-info' data-ng-bind-html-unsafe="_msg"></div>
+        <a class='btn btn-info' href="http://pirateparty.org.au" target="_self">Return to Pirate Party Australia</a>
       </div>
     </div>
     <script>$(".noscript").removeClass('noscript')</script>

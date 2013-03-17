@@ -16,6 +16,13 @@ from mutiny_paypal import PayPalAPI
 from bson.json_util import dumps
 from pymongo import Connection
 from tornado.web import Application, HTTPError, RequestHandler, StaticFileHandler
+from tornado.options import define, options
+
+
+define("no_mailer", default=False, help="Mock mailer")
+define("mode", default="production", help="Mode (production/development)")
+define("port", default=27013, help="port for server")
+
 
 def safe_modify(col, query, update, upsert=False):
     for attempt in range(5):
@@ -29,7 +36,7 @@ def safe_modify(col, query, update, upsert=False):
             return result
         except pymongo.errors.OperationFailure:
             return False
-        except pymongo.errors.AutoReconnect as _e:
+        except pymongo.errors.AutoReconnect:
             wait_t = 0.5 * pow(2, attempt)
             time.sleep(wait_t)
     return False
@@ -42,7 +49,7 @@ def safe_insert(collection, data):
             return True
         except pymongo.errors.OperationFailure:
             return False
-        except pymongo.errors.AutoReconnect as e:
+        except pymongo.errors.AutoReconnect:
             wait_t = 0.5 * pow(2, attempt)
             time.sleep(wait_t)
     return False
@@ -52,12 +59,18 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
     def initialize(self):
         self.name = "join"
         self.invoice_email = open('invoice-email.txt').read()
-        self.config = yaml.load(open('paypal.conf.yml'))['development']
+        self.welcome_email = open('welcome-email.txt').read()
+        self.config = yaml.load(open('paypal.conf.yml'))[options.mode]
         self.paypal = PayPalAPI(self.config)
         self.db = Connection().ppau
         self.mutiny = Connection().mutiny
-        self.mailer = Mailer()
-        self.mailer.connect()
+
+        if not options.no_mailer:
+            self.mailer = Mailer()
+            self.mailer.connect()
+        else:
+            import mock
+            self.mailer = mock.Mock()
 
     def validate(self, data):
         try:
@@ -176,7 +189,7 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
             c = self._get_counter('new_member')
             if c is None:
                 raise HTTPError(500, "mongodb keeled over at counter time")
-            out["reference"] = "FM%s" % self._get_counter('new_member')
+            out["reference"] = "FM%s" % c
 
         return out
 
@@ -265,12 +278,12 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
                     frm="membership@pirateparty.org.au",
                     to="%s %s <%s>" % (member['given_names'], member['surname'], member['email']),
                     subject="Pirate Party Membership Invoice (%s)" % invoice['reference'],
-                    body=self.invoice_email.format(name=member['given_names'].split(" ")[0]),
+                    text=self.invoice_email.format(name=member['given_names'].split(" ")[0]),
                     attachments=[create_attachment("ppau-invoice.pdf", pdf_data)]
                 )
                 return True
-            except:
-                pass
+            except Exception as e:
+                logging.error("Failed to send invoice - %s" % e)
             return False
         else:
             raise Exception("How did you even get here?")
@@ -290,21 +303,34 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
         logging.info("New member: %s %s" % (msg, id))
         logging.debug(dumps(member_record, indent=2))
 
+    def send_confirmation(self, member_record):
+        member = member_record['details']
+        self.mailer.send_email(
+            frm="membership@pirateparty.org.au",
+            to="%s %s <%s>" % (member['given_names'], member['surname'], member['email']),
+            subject="Welcome to Pirate Party Australia!",
+            text=self.welcome_email.format(name=member['given_names'].split(" ")[0])
+        )
+
     def get(self):
         self.render(self.name + '.html')
 
     def post(self):
         data = self.validate(self.get_argument('data', None))
         member_record = self.create_member_record(data)
-        sent = self.create_and_send_invoice(member_record['details'], member_record['invoices'][0])
         if not safe_insert(self.db.members, member_record):
             raise HTTPError(500, "mongodb keeled over")
+
+        sent = self.create_and_send_invoice(member_record['details'], member_record['invoices'][0])
         if not sent:
             raise HTTPError(500, "invoice failed to send")
+
+        self.send_confirmation(member_record)
         self.send_admin_message(member_record)
 
     def _get_counter(self, name):
         record = safe_modify(self.db.counters, {"_id": name}, {"$inc": {"count": 1}}, True)
+        logging.info("Current count for '%s': %s" % (name, record['count']))
         if record != False:
             return record['count']
 
@@ -344,9 +370,6 @@ class UpdateMemberFormHandler(NewMemberFormHandler):
 
         return cleaned
 
-    def send_update_confirmation(self, member_record):
-        return
-
     def send_admin_message(self, member_record):
         member = member_record['details']
         msg = "Updated member: %s %s [%s] (%s)" % (member['given_names'],
@@ -359,7 +382,7 @@ class UpdateMemberFormHandler(NewMemberFormHandler):
                 subject=msg,
                 body=id
         )
-        logging.info("Updated member: %s %s" % (msg, id))
+        logging.info("%s %s" % (msg, id))
         logging.debug(dumps(member_record, indent=2))
 
     def merge_data(self, data, member_record):
@@ -404,17 +427,111 @@ class UpdateMemberFormHandler(NewMemberFormHandler):
 
         if not safe_modify(self.db.members, {"_id": id}, member_record):
             raise HTTPError(500, "mongodb keeled over on update")
+
         self.send_admin_message(member_record)
 
+
+class PaymentMethodFormHandler(NewMemberFormHandler):
+    def validate(self, data):
+        try:
+            form_data = json.loads(data)
+        except:
+            raise HTTPError(400, "invalid form data")
+
+        cleaned = {}
+        mandatory_fields = ['payment_method', 'submission']
+
+        for field in mandatory_fields:
+            if field in form_data.keys():
+                cleaned[field] = form_data[field]
+            else:
+                raise HTTPError(400, "missing fields: %s" % field)
+
+        return cleaned
+
+    def send_admin_message(self, member_record):
+        member = member_record['details']
+        msg = "Payment method selected: %s %s [%s] (%s)" %\
+                (member['given_names'], member['surname'],
+                 member['email'], member['residential_state'])
+        id = member_record['_id'].hex
+
+        self.mailer.send_email(
+                frm=member['email'],
+                to='secretary@pirateparty.org.au',
+                subject=msg,
+                body="%s\n%s" % (id, member_record['invoices'][0]['payment_method'])
+        )
+        logging.info("%s %s" % (msg, id))
+        logging.debug(dumps(member_record, indent=2))
+
+    def merge_data(self, data, member_record):
+        invoice = self.create_invoice_record("full", data['payment_method'])
+        history_item = {
+            "action": "new-invoice",
+            "ts": invoice['ts'],
+            "invoice": invoice,
+            "v": 1
+        }
+        member_record['history'].append(history_item)
+        member_record['invoices'].append(invoice)
+        return member_record
+
+    def get(self, id):
+        try:
+            id = uuid.UUID(id)
+        except:
+            self.render(self.name + "-notfound.html")
+            return
+
+        record = self.db.members.find_one({"_id": id})
+        if not record:
+            self.render(self.name + "-notfound.html")
+            return
+
+        invoices = record.get('invoices')
+        if invoices is not None and len(invoices) > 0:
+            self.render(self.name + "-paymentselected.html")
+            return
+
+        self.render(self.name + ".html")
+
+    def post(self, id):
+        try:
+            id = uuid.UUID(id)
+        except:
+            raise HTTPError(400, "invalid ID")
+
+        member_record = self.db.members.find_one({"_id": id})
+        if not member_record:
+            raise HTTPError(403, "no member found by id")
+
+        invoices = member_record.get('invoices')
+        if invoices is not None and len(invoices) > 0:
+            raise HTTPError(403, "payment method already chosen")
+
+        data = self.validate(self.get_argument('data', None))
+        member_record = self.merge_data(data, member_record)
+
+        if not safe_modify(self.db.members, {"_id": id}, member_record):
+            raise HTTPError(500, "mongodb keeled over on update")
+
+        sent = self.create_and_send_invoice(member_record['details'], member_record['invoices'][0])
+        if not sent:
+            raise HTTPError(500, "invoice failed to send")
+
+        self.send_admin_message(member_record)
 
 
 if __name__ == "__main__":
     tornado.options.parse_command_line()
+
     application = Application([
         (r"/", NewMemberFormHandler),
         (r"/update/(.*)", UpdateMemberFormHandler),
+        (r"/payment/(.*)", PaymentMethodFormHandler),
         (r"/static/(.*)", StaticFileHandler, {"path": "../static"})
     ], **{"template_path": "../templates"})
-    application.listen(27013)
+    application.listen(options.port, xheaders=True)
     tornado.ioloop.IOLoop.instance().start()
 
