@@ -8,11 +8,14 @@ function JoinCtrl($scope) {
     } else {
         $scope._mode = "new";
     }
+    $scope._submitting = false;
     $scope._title = $scope._mode == "new" ? "New Member" : "Membership Update";
     $scope.submit = function() {
         var prop, node,
             out = {};
         
+        $scope._submitting = true;
+
         $(".ng-pristine").removeClass("ng-pristine").addClass("ng-dirty");
 
         for (prop in $scope) {
@@ -38,6 +41,8 @@ function JoinCtrl($scope) {
                 $("#completed").removeClass('hidden');
             });
         }
+
+        $scope._submitting = false;
     }
     $scope.isRequired = function() {
         console.log(arguments);

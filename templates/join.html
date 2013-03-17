@@ -284,7 +284,7 @@
           <div style="text-align: center" class='alert alert-danger'>
             Please ensure all the data you have entered is correct before hitting submit. It is a serious offence to make a false declaration.
             <br><br>
-            <button class="btn btn-primary" type='button' data-ng-click="submit()">Submit</button>
+            <button class="btn btn-primary" type='button' data-ng-disabled="_submitting == true" data-ng-click="submit()">Submit</button>
           </div>
         </fieldset>
       </form>

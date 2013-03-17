@@ -477,6 +477,15 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
         member_record['invoices'].append(invoice)
         return member_record
 
+    def send_confirmation(self, member_record):
+        member = member_record['details']
+        self.mailer.send_email(
+            frm="membership@pirateparty.org.au",
+            to="%s %s <%s>" % (member['given_names'], member['surname'], member['email']),
+            subject="Welcome to Pirate Party Australia!",
+            text=self.welcome_email.format(name=member['given_names'].split(" ")[0])
+        )
+
     def get(self, id):
         try:
             id = uuid.UUID(id)
@@ -520,6 +529,7 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
         if not sent:
             raise HTTPError(500, "invoice failed to send")
 
+        self.send_confirmation(member_record)
         self.send_admin_message(member_record)
 
 
