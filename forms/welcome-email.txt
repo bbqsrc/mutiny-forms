@@ -1,4 +1,4 @@
-Hey {{name}},
+Hey {name},
 
 Welcome to Pirate Party Australia!
 
