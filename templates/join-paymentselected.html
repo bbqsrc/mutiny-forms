@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" data-ng-app="joinForm">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Pirate Party Australia - Membership Application</title>
+    <link rel="stylesheet" type="text/css" href="../static/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="../static/bootstrap-responsive.min.css">
+    <link rel="stylesheet" type="text/css" href="../static/webfonts.css">
+    <link rel="stylesheet" type="text/css" href="../static/logo.css">
+    <style>
+      body { background-color: #0073ae; padding: 0; }
+      h4, legend { font-family: "GehenSans"; }
+      .container {
+        background-color: white;
+        padding: 1em;
+        border: 1px solid gray;
+        max-width: 860px;
+        box-shadow: 0px 0px 25px black;
+      }
+      .checkbox, .radio {
+        margin-left: 3em;
+      }
+      .alert {
+        margin-top: 1em;
+        margin-bottom: 1em;
+      }
+      .noscript {
+        display: none;
+      }
+
+      .controls .help-inline { display: none; }
+
+      .ng-dirty.ng-invalid-required + .help-inline {
+        display: inline-block;
+        color: #b94a48;
+      }
+    </style>
+    <meta name="robots" content="noindex,nofollow">
+    <base target="_blank">
+  </head>
+  <body>
+    <div class='container'>
+      <div style='min-height: 80px'>
+        <h1>
+          <a href="http://pirateparty.org.au" class="logo">
+            <div>
+              <span class="logo-bold-blue">pirate</span>party
+            </div>
+            <div class="logo-australia">Membership Application</div>
+          </a>
+        </h1>
+      </div>
+      <div class='alert'>
+        <p><strong>You have already selected a payment method.</strong> If you are having issues with payment, please contact <a href="mailto:membership@pirateparty.org.au">membership@pirateparty.org.au</a>.</p>
+      </div>  
+    </div>
+  </body>
+</html>
