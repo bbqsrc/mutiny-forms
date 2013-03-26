@@ -182,7 +182,8 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
             }],
             "payment_method": payment_method,
             "due_date": due_date,
-            "issued_date": issued_date
+            "issued_date": issued_date,
+            "status": "pending"
         }
 
         if payment_method != "paypal":
@@ -318,12 +319,12 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
     def post(self):
         data = self.validate(self.get_argument('data', None))
         member_record = self.create_member_record(data)
-        if not safe_insert(self.db.members, member_record):
-            raise HTTPError(500, "mongodb keeled over")
-
         sent = self.create_and_send_invoice(member_record['details'], member_record['invoices'][0])
+
         if not sent:
             raise HTTPError(500, "invoice failed to send")
+        if not safe_insert(self.db.members, member_record):
+            raise HTTPError(500, "mongodb keeled over")
 
         self.send_confirmation(member_record)
         self.send_admin_message(member_record)
