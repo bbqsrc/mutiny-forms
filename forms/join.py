@@ -321,10 +321,10 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
         data = self.validate(self.get_argument('data', None))
         member_record = self.create_member_record(data)
         invoice_record = self.create_and_send_invoice(member_record['details'], member_record['invoices'][0])
-        member_record['invoices'][0] = invoice_record
-
-        if not sent:
+        if not invoice_record:
             raise HTTPError(500, "invoice failed to send")
+
+        member_record['invoices'][0] = invoice_record
         if not safe_insert(self.db.members, member_record):
             raise HTTPError(500, "mongodb keeled over")
 
@@ -525,10 +525,10 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
         data = self.validate(self.get_argument('data', None))
         member_record = self.merge_data(data, member_record)
         invoice_record = self.create_and_send_invoice(member_record['details'], member_record['invoices'][0])
-        member_record['invoices'][0] = invoice_record
-
-        if not sent:
+        if not invoice_record:
             raise HTTPError(500, "invoice failed to send")
+
+        member_record['invoices'][0] = invoice_record
         if not safe_modify(self.db.members, {"_id": id}, member_record):
             raise HTTPError(500, "mongodb keeled over on update")
 
