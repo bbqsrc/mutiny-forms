@@ -501,7 +501,7 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
             return
 
         invoices = record.get('invoices')
-        if record['details']['membership_level'] == "full" or (invoices is not None and len(invoices) > 0):
+        if record['details']['membership_level'] != "full" or (invoices is not None and len(invoices) > 0):
             self.render(self.name + "-paymentselected.html")
             return
 
