@@ -217,7 +217,8 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
             )
 
             if response['responseEnvelope']['ack'].startswith("Success"):
-                invoice['reference'] = response['invoiceID']
+                invoice['reference'] = response['invoiceNumber']
+                invoice['paypal_id'] = response['invoiceID']
                 return True
             else:
                 return False
