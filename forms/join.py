@@ -219,9 +219,9 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
             if response['responseEnvelope']['ack'].startswith("Success"):
                 invoice['reference'] = response['invoiceNumber']
                 invoice['paypal_id'] = response['invoiceID']
-                return True
+                return invoice 
             else:
-                return False
+                return None
 
         elif invoice['payment_method'] in ("direct_deposit", "cheque"):
             personal = {
@@ -250,7 +250,7 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
               ]
             }
 
-            invoice = {
+            invoice_tmpl = {
                 "regarding": "Full Membership",
                 "name": "%s %s" % (member['given_names'], member['surname']),
                 "reference": invoice['reference'],
@@ -274,19 +274,19 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
                 "payment_due": invoice['due_date'].strftime("%d/%m/%Y")
             }
 
-            pdf_data = Invoice(invoice, personal).to_pdf()
+            pdf_data = Invoice(invoice_tmpl, personal).to_pdf()
             try:
                 self.mailer.send_email(
                     frm="membership@pirateparty.org.au",
                     to="%s %s <%s>" % (member['given_names'], member['surname'], member['email']),
-                    subject="Pirate Party Membership Invoice (%s)" % invoice['reference'],
+                    subject="Pirate Party Membership Invoice (%s)" % invoice_tmpl['reference'],
                     text=self.invoice_email.format(name=member['given_names'].split(" ")[0]),
                     attachments=[create_attachment("ppau-invoice.pdf", pdf_data)]
                 )
-                return True
+                return invoice
             except Exception as e:
                 logging.error("Failed to send invoice - %s" % e)
-            return False
+            return None
         else:
             raise Exception("How did you even get here?")
 
@@ -320,7 +320,8 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
     def post(self):
         data = self.validate(self.get_argument('data', None))
         member_record = self.create_member_record(data)
-        sent = self.create_and_send_invoice(member_record['details'], member_record['invoices'][0])
+        invoice_record = self.create_and_send_invoice(member_record['details'], member_record['invoices'][0])
+        member_record['invoices'][0] = invoice_record
 
         if not sent:
             raise HTTPError(500, "invoice failed to send")
@@ -523,7 +524,8 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
 
         data = self.validate(self.get_argument('data', None))
         member_record = self.merge_data(data, member_record)
-        sent = self.create_and_send_invoice(member_record['details'], member_record['invoices'][0])
+        invoice_record = self.create_and_send_invoice(member_record['details'], member_record['invoices'][0])
+        member_record['invoices'][0] = invoice_record
 
         if not sent:
             raise HTTPError(500, "invoice failed to send")
@@ -532,7 +534,6 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
 
         self.send_confirmation(member_record)
         self.send_admin_message(member_record)
-
 
 if __name__ == "__main__":
     tornado.options.parse_command_line()
