@@ -523,13 +523,12 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
 
         data = self.validate(self.get_argument('data', None))
         member_record = self.merge_data(data, member_record)
-
-        if not safe_modify(self.db.members, {"_id": id}, member_record):
-            raise HTTPError(500, "mongodb keeled over on update")
-
         sent = self.create_and_send_invoice(member_record['details'], member_record['invoices'][0])
+
         if not sent:
             raise HTTPError(500, "invoice failed to send")
+        if not safe_modify(self.db.members, {"_id": id}, member_record):
+            raise HTTPError(500, "mongodb keeled over on update")
 
         self.send_confirmation(member_record)
         self.send_admin_message(member_record)
