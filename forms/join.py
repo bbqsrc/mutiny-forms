@@ -11,7 +11,7 @@ import tornado.options
 import tornado.web
 
 from invoice import Invoice
-from bbqutils.email import Mailer, create_attachment
+from bbqutils.email import sendmail, create_email, create_attachment
 from mutiny_paypal import PayPalAPI
 from bson.json_util import dumps
 from pymongo import Connection
@@ -64,13 +64,6 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
         self.paypal = PayPalAPI(self.config)
         self.db = Connection().ppau
         self.mutiny = Connection().mutiny
-
-        if not options.no_mailer:
-            self.mailer = Mailer()
-            self.mailer.connect()
-        else:
-            import mock
-            self.mailer = mock.Mock()
 
     def validate(self, data):
         try:
@@ -276,13 +269,13 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
 
             pdf_data = Invoice(invoice_tmpl, personal).to_pdf()
             try:
-                self.mailer.send_email(
+                sendmail(create_email(
                     frm="membership@pirateparty.org.au",
                     to="%s %s <%s>" % (member['given_names'], member['surname'], member['email']),
                     subject="Pirate Party Membership Invoice (%s)" % invoice_tmpl['reference'],
                     text=self.invoice_email.format(name=member['given_names'].split(" ")[0]),
                     attachments=[create_attachment("ppau-invoice.pdf", pdf_data)]
-                )
+                ))
                 return invoice
             except Exception as e:
                 logging.error("Failed to send invoice - %s" % e)
@@ -296,23 +289,23 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
                 member['surname'], member['email'], member['residential_state'])
         id = member_record['_id'].hex
 
-        self.mailer.send_email(
+        sendmail(create_email(
                 frm=member['email'],
                 to='secretary@pirateparty.org.au',
                 subject=msg,
                 text=id
-        )
+        ))
         logging.info("New member: %s %s" % (msg, id))
         logging.debug(dumps(member_record, indent=2))
 
     def send_confirmation(self, member_record):
         member = member_record['details']
-        self.mailer.send_email(
+        sendmail(create_email(
             frm="membership@pirateparty.org.au",
             to="%s %s <%s>" % (member['given_names'], member['surname'], member['email']),
             subject="Welcome to Pirate Party Australia!",
             text=self.welcome_email.format(name=member['given_names'].split(" ")[0])
-        )
+        ))
 
     def get(self):
         self.render(self.name + '.html')
@@ -379,12 +372,12 @@ class UpdateMemberFormHandler(NewMemberFormHandler):
                 member['surname'], member['email'], member['residential_state'])
         id = member_record['_id'].hex
 
-        self.mailer.send_email(
+        sendmail(create_email(
                 frm=member['email'],
                 to='secretary@pirateparty.org.au',
                 subject=msg,
                 text=id
-        )
+        ))
         logging.info("%s %s" % (msg, id))
         logging.debug(dumps(member_record, indent=2))
 
@@ -459,12 +452,12 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
                  member['email'], member['residential_state'])
         id = member_record['_id'].hex
 
-        self.mailer.send_email(
+        sendmail(create_email(
                 frm=member['email'],
                 to='secretary@pirateparty.org.au',
                 subject=msg,
                 text="%s\n%s" % (id, member_record['invoices'][0]['payment_method'])
-        )
+        ))
         logging.info("%s %s" % (msg, id))
         logging.debug(dumps(member_record, indent=2))
 
@@ -482,12 +475,12 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
 
     def send_confirmation(self, member_record):
         member = member_record['details']
-        self.mailer.send_email(
+        sendmail(create_email(
             frm="membership@pirateparty.org.au",
             to="%s %s <%s>" % (member['given_names'], member['surname'], member['email']),
             subject="Welcome to Pirate Party Australia!",
             text=self.welcome_email.format(name=member['given_names'].split(" ")[0])
-        )
+        ))
 
     def get(self, id):
         try:
@@ -537,6 +530,8 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
 
 if __name__ == "__main__":
     tornado.options.parse_command_line()
+    if options.no_mailer:
+        sendmail = Mock()
 
     application = Application([
         (r"/", NewMemberFormHandler),
