@@ -269,7 +269,7 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
             if member['membership_level'] == "full":
                 member_level = "Full Membership"
             elif member['membership_level'] == "associate":
-                membership_level = "Associate Membership"
+                member_level = "Associate Membership"
 
             invoice_tmpl = {
                 "regarding": member_level,
