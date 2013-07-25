@@ -202,18 +202,56 @@
           </div>
 
         </fieldset>
+        <fieldset data-ng-show="_mode == 'new' || _mode == 'payment'">
+          <legend>Membership Type and Payment</legend>
+          <p>Please select membership type:</p>
+          <div>
+          <label class="radio">
+            <input type="radio" name='membership_level' value="full" data-ng-model="membership_level">
+            Full Membership
+          </label>
+          <label class="radio">
+            <input type="radio" name='membership_level' value="associate" data-ng-model="membership_level">
+            Associate Membership
+          </label>
+
+          <div class="alert alert-info" data-ng-show="membership_level != null">
+            <div data-ng-show="membership_level == 'full'"><strong>Full Membership</strong> of Pirate Party Australia is currently <strong>$20</strong>. The entitlements of Full Membership can be found in <a href="http://pirateparty.org.au/constitution/#4.2.1">Article 4.2.1 of the Party Constitution</a>.</div> 
+            <div data-ng-show="membership_level == 'associate'"><strong>Associate Membership</strong> of Pirate Party Australia is currently <strong>$20</strong>. The entitlements of Associate Membership can be found in <a href="http://pirateparty.org.au/constitution/#4.2.2">Article 4.2.2 of the Party Constitution</a>.<br><br>
+            Associate membership is intended for use by those persons who wish to be members of Pirate Party Australia but are not eligible to enrol for electoral purposes, such as foreign citizens. This membership level has limited rights compared to that of Full Membership.</div> 
+          </div>
+          <div data-ng-show="membership_level != null">
+            <p>Please select payment method:</p>
+            <label class="radio">
+              <input type="radio" checked name="payment_method" data-ng-model="payment_method" value="paypal"> PayPal (including Credit/Debit Card)
+            </label> 
+            <label class="radio">
+              <input type="radio" name="payment_method" data-ng-model="payment_method" value="direct_deposit"> Direct Deposit 
+            </label> 
+            <label class="radio">
+              <input type="radio" name="payment_method" data-ng-model="payment_method" value="cheque"> Cheque
+            </label>
+          </div>
+          <div class="alert" data-ng-show="membership_level != null">
+            <p>An invoice will be sent by email. For direct deposit and cheque, please enter the reference number found in the invoice when you make your payment.</p>
+
+            <p>Pirate Party Australia is fully member funded. <a target="_blank" href="http://pirateparty.org.au/donate">If you wish to make a donation, please click here</a>.</p>
+          </div>
+        </fieldset>
         <fieldset data-ng-show="_mode == 'new'">
           <legend>Declaration and Membership Requirements</legend>
           <div class='alert alert-info'>
             <p>I wish to become a member of Pirate Party Australia. I have read and understand the <a href="http://pirateparty.org.au/constitution">Pirate Party Australia Constitution</a> and agree with its platform and principles, and will to the best of my ability work to uphold and promote them.</p>
-  					<p>I am <strong>enrolled for Federal elections</strong>, i.e. I am 16 years of age or older. I am an Australian citizen (or a British citizen who was on the Australian Electoral roll on 25 of January 1984) and I have lived at the above address for at least one month.</p>
-  					<p>I consent to this form being forwarded to the Australian Electoral Commission (AEC) in support of the party's application for registration as a political party.</p>
-  					<div style="text-align: center"><a href="http://www.aec.gov.au/enrol">If you are not enrolled to vote, click here.</a></div>
+  					<p data-ng-show="membership_level == 'full'">I am <strong>enrolled for Federal elections</strong>, i.e. I am 16 years of age or older. I am an Australian citizen (or a British citizen who was on the Australian Electoral roll on 25 of January 1984) and I have lived at the above address for at least one month.</p>
+  					<p data-ng-show="membership_level == 'full'">I consent to this form being forwarded to the Australian Electoral Commission (AEC) in support of the party's application for registration as a political party.</p>
+  					<div style="text-align: center" data-ng-show="membership_level == 'full'"><a href="http://www.aec.gov.au/enrol">If you are not enrolled to vote, click here.</a></div>
           </div>
           <div class="control-group">
             <div class="controls">
               <label class="checkbox">
-                <input required type="checkbox" data-ng-model="declaration"> I confirm that I am enrolled to vote in federal elections and consent to my information being sent to the Australian Electoral Commission.
+                <input required type="checkbox" data-ng-model="declaration">
+                <span data-ng-show='membership_level == "full"'>I confirm that I am enrolled to vote in federal elections and consent to my information being sent to the Australian Electoral Commission.</span>
+                <span data-ng-show='membership_level == "associate"'>I agree to the declaration.</span>
                 <span class="help-inline">This field is required</span>
               </label>
             </div>
@@ -221,18 +259,6 @@
         </fieldset>
         <fieldset data-ng-show="_mode == 'new'">
           <legend>Other Information</legend>
-          <div class="alert alert-info">
-            <p>Pirate Party Australia may in the future create state branches, and to ease in this process, we would like your consent to include your Pirate Party Australia membership for the registration of any of these branches.</p>
-  					<div>This allows us to ensure that you are represented on the Federal level, the State level and the Local level in elections.</div>
-          </div>  
-          <div class="control-group">
-            <div class="controls">
-              <label class="checkbox">
-                <input type="checkbox" data-ng-model="opt_out_state_parties"> I would like to <strong>opt-out</strong> of my membership being used for the purposes of registering state branches of Pirate Party Australia.
-              </label>
-              <div data-ng-show="opt_out_state_parties == true" class="alert alert-danger">You have made the Secretary sad. :(</div>
-            </div>
-          </div>
           <div class="alert alert-info">
             <div>Pirate Party Australia does not allow membership of multiple Australian federal political parties. If you wish to sign up to Pirate Party Australia and are currently a member of another party, please resign from that party first before submitting your application.</div>
           </div>  
@@ -245,30 +271,6 @@
             </div>
           </div>
           
-        </fieldset>
-        <fieldset data-ng-show="_mode == 'new' || _mode == 'payment'">
-          <legend>Payment</legend>
-          <input type="hidden" value="full" data-ng-model="membership_level">
-          <div class="alert alert-info">
-            <p><strong>Full Membership</strong> of Pirate Party Australia is currently <strong>$20</strong>. The entitlements of Full Membership can be found in Article 3.1.2 of the <a href="http://pirateparty.org.au/constitution">Party Constitution</a>.</p> 
-          </div>
-          <div>
-            <p>Please select payment method:</p>
-            <label class="radio">
-              <input type="radio" checked name="payment_method" data-ng-model="payment_method" value="paypal"> PayPal (including Credit/Debit Card)
-            </label> 
-            <label class="radio">
-              <input type="radio" name="payment_method" data-ng-model="payment_method" value="direct_deposit"> Direct Deposit 
-            </label> 
-            <label class="radio">
-              <input type="radio" name="payment_method" data-ng-model="payment_method" value="cheque"> Cheque
-            </label>
-          </div>
-          <div class="alert">
-            <p>An invoice will be sent by email. For direct deposit and cheque, please enter the reference number found in the invoice when you make your payment.</p>
-
-            <p>Pirate Party Australia is fully member funded. <a target="_blank" href="http://pirateparty.org.au/donate">If you wish to make a donation, please click here</a>.</p>
-          </div>
         </fieldset>
         <fieldset>
           <legend>Submission</legend>

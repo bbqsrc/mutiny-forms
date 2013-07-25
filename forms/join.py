@@ -95,7 +95,7 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
             if field in form_data.keys():
                 cleaned[field] = form_data[field]
 
-        if cleaned['membership_level'] != "full":
+        if cleaned['membership_level'] not in ("full", "associate"):
             raise HTTPError(400, "invalid membership level")
 
         if cleaned['payment_method'] not in ("paypal", "direct_deposit", "cheque"):
@@ -159,32 +159,53 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
         }
 
     def create_invoice_record(self, membership_level, payment_method):
-        if membership_level == "full":
+        if membership_level in ("full", "associate"):
             price = 2000
 
         issued_date = datetime.datetime.utcnow()
         due_date = issued_date + datetime.timedelta(days=30)
 
-        out = {
-            "v": 1,
-            "ts": datetime.datetime.utcnow(),
-            "items": [{
-                "item": "Full Membership - 12 Months",
-                "qty": 1,
-                "price": price
-            }],
-            "payment_method": payment_method,
-            "due_date": due_date,
-            "issued_date": issued_date,
-            "status": "pending"
-        }
-
-        if payment_method != "paypal":
-            c = self._get_counter('new_member')
-            if c is None:
-                raise HTTPError(500, "mongodb keeled over at counter time")
-            out["reference"] = "FM%s" % c
-
+        if membership_level == "full":
+            out = {
+                "v": 1,
+                "ts": datetime.datetime.utcnow(),
+                "items": [{
+                    "item": "Full Membership - 12 Months",
+                    "qty": 1,
+                    "price": price
+                }],
+                "payment_method": payment_method,
+                "due_date": due_date,
+                "issued_date": issued_date,
+                "status": "pending"
+            }
+    
+            if payment_method != "paypal":
+                c = self._get_counter('new_member')
+                if c is None:
+                    raise HTTPError(500, "mongodb keeled over at counter time")
+                out["reference"] = "FM%s" % c
+        
+        elif membership_level == "associate":
+            out = {
+                "v": 1,
+                "ts": datetime.datetime.utcnow(),
+                "items": [{
+                    "item": "Associate Membership - 12 Months",
+                    "qty": 1,
+                    "price": price
+                }],
+                "payment_method": payment_method,
+                "due_date": due_date,
+                "issued_date": issued_date,
+                "status": "pending"
+            }
+    
+            if payment_method != "paypal":
+                c = self._get_counter('new_member_am')
+                if c is None:
+                    raise HTTPError(500, "mongodb keeled over at counter time")
+                out["reference"] = "AM%s" % c
         return out
 
     def create_and_send_invoice(self, member, invoice):
@@ -236,15 +257,22 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
                   "Cheque": [
                     "Address:",
                     "Pirate Party Australia",
-                    "PO Box Q1715",
-                    "Queen Victoria Building NSW 1230"
+                    "PO Box 527",
+                    "Balgowlah NSW 2093"
                   ]
                 }
               ]
             }
 
+            
+            member_level = "INVALID"
+            if member['membership_level'] == "full":
+                member_level = "Full Membership"
+            elif member['membership_level'] == "associate":
+                membership_level = "Associate Membership"
+
             invoice_tmpl = {
-                "regarding": "Full Membership",
+                "regarding": member_level,
                 "name": "%s %s" % (member['given_names'], member['surname']),
                 "reference": invoice['reference'],
                 "items": [
@@ -285,7 +313,7 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
 
     def send_admin_message(self, member_record):
         member = member_record['details']
-        msg = "New member: %s %s [%s] (%s)" % (member['given_names'],
+        msg = "New %s member: %s %s [%s] (%s)" % (member['membership_level'], member['given_names'],
                 member['surname'], member['email'], member['residential_state'])
         id = member_record['_id'].hex
 
