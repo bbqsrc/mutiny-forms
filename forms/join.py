@@ -76,7 +76,7 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
             'given_names', 'surname', 'date_of_birth', 'residential_address',
             'residential_postcode', 'residential_state', 'residential_suburb',
             'submission', 'declaration', 'email', 'primary_phone',
-            'membership_level', 'payment_method'
+            'membership_level', 'payment_method', 'payment_amount'
         ]
 
         optional_fields = [
@@ -103,6 +103,12 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
 
         if cleaned['declaration'] != True or cleaned['submission'] != True:
             raise HTTPError(400, "invalid declaration or submission flag")
+
+        try:
+            x = int(cleaned['payment_amount']) * 100
+            cleaned['payment_amount'] = x
+        except:
+            raise HTTPError(400, "invalid payment amount")
 
         try:
             cleaned['date_of_birth'] = datetime.datetime.strptime(cleaned['date_of_birth'], "%d/%m/%Y")
@@ -137,7 +143,9 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
             "joined_on": ts
         }
 
-        invoice = self.create_invoice_record(data['membership_level'], data['payment_method'])
+        invoice = self.create_invoice_record(data['membership_level'],
+                                             data['payment_method'],
+                                             data['payment_amount'])
 
         return {
             "_id": id,
@@ -158,9 +166,10 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
             "v": 1
         }
 
-    def create_invoice_record(self, membership_level, payment_method):
-        if membership_level in ("full", "associate"):
-            price = 2000
+    def create_invoice_record(self, membership_level, payment_method, price=None):
+        if price is None:
+            if membership_level in ("full", "associate"):
+                price = 2000
 
         issued_date = datetime.datetime.utcnow()
         due_date = issued_date + datetime.timedelta(days=30)
