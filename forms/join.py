@@ -69,6 +69,7 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
         try:
             form_data = json.loads(data)
         except:
+            logging.error(data)
             raise HTTPError(400, "invalid form data")
 
         cleaned = {}
@@ -113,7 +114,8 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
         try:
             cleaned['date_of_birth'] = datetime.datetime.strptime(cleaned['date_of_birth'], "%d/%m/%Y")
         except:
-            raise HTTPError(400, "invalid form data")
+            logging.error(form_data)
+            raise HTTPError(400, "invalid form data (date of birth)")
 
         return cleaned
 
@@ -327,7 +329,8 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
         id = member_record['_id'].hex
 
         sendmail(create_email(
-                frm=member['email'],
+                frm='secretary@pirateparty.org.au',
+                reply_to=member['email'],
                 to='secretary@pirateparty.org.au',
                 subject=msg,
                 text=id
@@ -410,7 +413,8 @@ class UpdateMemberFormHandler(NewMemberFormHandler):
         id = member_record['_id'].hex
 
         sendmail(create_email(
-                frm=member['email'],
+                frm='secretary@pirateparty.org.au',
+                reply_to=member['email'],
                 to='secretary@pirateparty.org.au',
                 subject=msg,
                 text=id
