@@ -335,7 +335,8 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
                 reply_to=member['email'],
                 to='secretary@pirateparty.org.au',
                 subject=msg,
-                text=id
+                text="%s\n%s\n$%s" % (id, member_record['invoices'][0]['payment_method'],
+                    member_record['invoices'][0]['items'][0]['price'])
         ))
         logging.info("New member: %s %s" % (msg, id))
         logging.debug(dumps(member_record, indent=2))
