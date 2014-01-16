@@ -243,7 +243,7 @@
           </div>
         </div>
 
-          <div data-ng-show="membership_level != null">
+        <div data-ng-show="membership_level != null && payment_amount > 0">
             <p>Please select payment method:</p>
             <label class="radio">
               <input type="radio" checked name="payment_method" data-ng-model="payment_method" value="paypal"> PayPal (including Credit/Debit Card)

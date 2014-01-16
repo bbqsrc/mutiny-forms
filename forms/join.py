@@ -108,6 +108,8 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
         try:
             x = abs(int(cleaned['payment_amount']) * 100)
             cleaned['payment_amount'] = x
+            if x == 0:
+                cleaned['payment_method'] = 'direct_deposit'
         except:
             raise HTTPError(400, "invalid payment amount")
 
