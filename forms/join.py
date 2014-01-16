@@ -1,4 +1,4 @@
-import datetime
+inamemport datetime
 import json
 import re
 import uuid
@@ -106,7 +106,7 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
             raise HTTPError(400, "invalid declaration or submission flag")
 
         try:
-            x = int(cleaned['payment_amount']) * 100
+            x = abs(int(cleaned['payment_amount']) * 100)
             cleaned['payment_amount'] = x
         except:
             raise HTTPError(400, "invalid payment amount")
