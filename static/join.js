@@ -28,6 +28,7 @@ function JoinCtrl($scope) {
         node = $("input.ng-invalid-required:visible").first();
         if (node.length) {
             node.focus();
+            $scope._submitting = false;
         } else {
             // Do ajax
             $.ajax(location.pathname, {
@@ -39,10 +40,9 @@ function JoinCtrl($scope) {
             }).always(function(data) {
                 $("form").addClass('hidden');
                 $("#completed").removeClass('hidden');
+                $scope._submitting = false;
             });
         }
-
-        $scope._submitting = false;
     }
     $scope.isRequired = function() {
         console.log(arguments);
