@@ -306,12 +306,12 @@
             </div>
           </div>
           <hr>
+          <div class="alert alert-info" data-ng-show="_submitting == true">Submitting...</div>
           <div style="text-align: center" class='alert alert-danger'>
             Please ensure all the data you have entered is correct before hitting submit. It is a serious offence to make a false declaration.
             <br><br>
             <button class="btn btn-primary" type='button' data-ng-disabled="_submitting == true" data-ng-click="submit()">Submit</button>
           </div>
-          <div class="alert alert-info" data-ng-show="_submitting == true">Submitting...</div>
         </fieldset>
       </form>
       <div id='completed' class='hidden'>
