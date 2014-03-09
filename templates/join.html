@@ -70,7 +70,10 @@
         <div class='alert alert-info'>
           This information will be used for the purposes of registering a political party with the Australian Electoral Commission.
           <a href="http://pirateparty.org.au/privacy">Privacy Policy</a>
-        </div>  
+        </div>
+        <div class='alert alert-success'>
+          Promotion: new members from Western Australia can join for <strong>free</strong> until election night!
+        </div>
 
         <h2 data-ng-bind="_title"></h2>
         <fieldset class="form-horizontal" data-ng-show="_mode != 'payment'">
@@ -129,7 +132,7 @@
           <div class="control-group">
             <label class="control-label" for="residentialState">State</label>
             <div class="controls">
-              <select required type="text" id="residentialState" data-ng-model="residential_state" data-ng-options="state for state in _states">
+              <select required type="text" id="residentialState" data-ng-change="stateChange()" data-ng-model="residential_state" data-ng-options="state for state in _states">
                 <option value=""></option>
               </select>
               <span class="help-inline">This field is required</span>
@@ -217,8 +220,8 @@
           </label>
 
           <div class="alert alert-info" data-ng-show="membership_level != null">
-            <div data-ng-show="membership_level == 'full'"><strong>Full Membership</strong> of Pirate Party Australia is currently <strong>$20</strong>. The entitlements of Full Membership can be found in <a href="http://pirateparty.org.au/constitution/#4.2.1">Article 4.2.1 of the Party Constitution</a>.</div> 
-            <div data-ng-show="membership_level == 'associate'"><strong>Associate Membership</strong> of Pirate Party Australia is currently <strong>$20</strong>. The entitlements of Associate Membership can be found in <a href="http://pirateparty.org.au/constitution/#4.2.2">Article 4.2.2 of the Party Constitution</a>.<br><br>
+            <div data-ng-show="membership_level == 'full'"><strong>Full Membership</strong> of Pirate Party Australia is currently <strong>${{payment_amount}}</strong>. The entitlements of Full Membership can be found in <a href="http://pirateparty.org.au/constitution/#4.2.1">Article 4.2.1 of the Party Constitution</a>.</div> 
+            <div data-ng-show="membership_level == 'associate'"><strong>Associate Membership</strong> of Pirate Party Australia is currently <strong>${{payment_amount}}</strong>. The entitlements of Associate Membership can be found in <a href="http://pirateparty.org.au/constitution/#4.2.2">Article 4.2.2 of the Party Constitution</a>.<br><br>
             Associate membership is intended for use by those persons who wish to be members of Pirate Party Australia but are not eligible to enrol for electoral purposes, such as foreign citizens. This membership level has limited rights compared to that of Full Membership.</div> 
         </div>
 
