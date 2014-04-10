@@ -60,13 +60,9 @@ function JoinCtrl($scope) {
         return visible;
     };
     
-    $scope.stateChange = function() {
-        $scope.payment_amount = this.residential_state == "WA" ? 0 : 20;
-    }
-
     $scope.membership_level = "full";
     $scope.payment_method = "paypal";
-    $scope.payment_amount = 20;
+    $scope.payment_amount = 50;
     $scope._states = ["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"];
 
     if ($scope._mode == "new" || $scope._mode == "payment") {
