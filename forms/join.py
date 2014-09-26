@@ -264,8 +264,9 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
                 {
                   "Direct Deposit": [
                     "Name: Pirate Party Australia Incorporated",
-                    "BSB: 633000",
-                    "Account number: 138718051"
+                    "BSB: 012084",
+                    "Account number: 213142205",
+                    "Bank: ANZ"
                   ]
                 }, {
                   "Cheque": [
