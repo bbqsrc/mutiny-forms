@@ -77,7 +77,7 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
             'given_names', 'surname', 'date_of_birth', 'residential_address',
             'residential_postcode', 'residential_state', 'residential_suburb',
             'submission', 'declaration', 'email', 'primary_phone',
-            'membership_level', 'payment_method', 'payment_amount'
+            'membership_level', 'payment_method'#, 'payment_amount'
         ]
 
         optional_fields = [
@@ -106,11 +106,11 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
             raise HTTPError(400, "invalid declaration or submission flag")
 
         try:
-            x = abs(int(cleaned['payment_amount']) * 100)
-            cleaned['payment_amount'] = x
-            if x == 0:
-                cleaned['payment_method'] = 'direct_deposit'
-            #cleaned['payment_amount'] = 2000
+            #x = abs(int(cleaned['payment_amount']) * 100)
+            #cleaned['payment_amount'] = x
+            #if x == 0:
+            #    cleaned['payment_method'] = 'direct_deposit'
+            cleaned['payment_amount'] = 2000
         except:
             raise HTTPError(400, "invalid payment amount")
 
