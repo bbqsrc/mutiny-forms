@@ -70,7 +70,12 @@
         <div class='alert alert-info'>
           This information will be used for the purposes of registering a political party with the Australian Electoral Commission.
           <a href="http://pirateparty.org.au/privacy">Privacy Policy</a>
-        </div>  
+        </div>
+          <div class="alert alert-success">
+            <strong>Surveillance state got you down?</strong> Pay what you want to join the Pirate Party!
+            <br>
+            Please enter a whole dollar value (minimum $0).
+          </div>
 
         <h2 data-ng-bind="_title"></h2>
         <fieldset class="form-horizontal" data-ng-show="_mode != 'payment'">
@@ -142,7 +147,7 @@
               <span class="help-inline">This field is required</span>
             </div>
           </div>
-          
+
           <div class="control-group">
             <div class="controls">
               <label class="checkbox">
@@ -150,7 +155,7 @@
               </label>
             </div>
           </div>
-          <div data-ng-show="_postal == true"> 
+          <div data-ng-show="_postal == true">
             <h4>Postal Address</h4>
             <div class="control-group">
               <label class="control-label" for="postalAddress">Address</label>
@@ -217,19 +222,36 @@
           </label>
 
           <div class="alert alert-info" data-ng-show="membership_level != null">
-            <div data-ng-show="membership_level == 'full'"><strong>Full Membership</strong> of Pirate Party Australia is currently <strong>$20</strong>. The entitlements of Full Membership can be found in <a href="http://pirateparty.org.au/constitution/#4.2.1">Article 4.2.1 of the Party Constitution</a>.</div> 
+            <div data-ng-show="membership_level == 'full'"><strong>Full Membership</strong> of Pirate Party Australia is currently <strong>whatever you want!</strong> The entitlements of Full Membership can be found in <a href="http://pirateparty.org.au/constitution/#4.2.1">Article 4.2.1 of the Party Constitution</a>.</div>
+            <div data-ng-show="membership_level == 'associate'"><strong>Associate Membership</strong> of Pirate Party Australia is currently <strong>whatever you want!</strong>. The entitlements of Associate Membership can be found in <a href="http://pirateparty.org.au/constitution/#4.2.2">Article 4.2.2 of the Party Constitution</a>.<br><br>
+            <!--
+            <div data-ng-show="membership_level == 'full'"><strong>Full Membership</strong> of Pirate Party Australia is currently <strong>$20</strong>. The entitlements of Full Membership can be found in <a href="http://pirateparty.org.au/constitution/#4.2.1">Article 4.2.1 of the Party Constitution</a>.</div>
             <div data-ng-show="membership_level == 'associate'"><strong>Associate Membership</strong> of Pirate Party Australia is currently <strong>$20</strong>. The entitlements of Associate Membership can be found in <a href="http://pirateparty.org.au/constitution/#4.2.2">Article 4.2.2 of the Party Constitution</a>.<br><br>
-            Associate membership is intended for use by those persons who wish to be members of Pirate Party Australia but are not eligible to enrol for electoral purposes, such as foreign citizens. This membership level has limited rights compared to that of Full Membership.</div> 
+              -->
+            Associate membership is intended for use by those persons who wish to be members of Pirate Party Australia but are not eligible to enrol for electoral purposes, such as foreign citizens. This membership level has limited rights compared to that of Full Membership.</div>
+        </div>
+
+        <div>
+          <div class="control-group">
+            <label class="control-label" for="payment_amount">Membership contribution:</label>
+            <div class="controls" style="margin-left: 40px">
+              <div class="input-prepend">
+                <span class="add-on">$</span>
+                <input required type='number' step='1' min='0' id='payment_amount' data-ng-model="payment_amount" class='span1' value='50'>
+              </div>
+              <span class="help-inline">This field is required.</span>
+            </div>
+          </div>
         </div>
 
         <div data-ng-show="membership_level != null && payment_amount > 0">
             <p>Please select payment method:</p>
             <label class="radio">
               <input type="radio" checked name="payment_method" data-ng-model="payment_method" value="paypal"> PayPal (including Credit/Debit Card)
-            </label> 
+            </label>
             <label class="radio">
-              <input type="radio" name="payment_method" data-ng-model="payment_method" value="direct_deposit"> Direct Deposit 
-            </label> 
+              <input type="radio" name="payment_method" data-ng-model="payment_method" value="direct_deposit"> Direct Deposit
+            </label>
             <label class="radio">
               <input type="radio" name="payment_method" data-ng-model="payment_method" value="cheque"> Cheque
             </label>
@@ -263,16 +285,16 @@
           <legend>Other Information</legend>
           <div class="alert alert-info">
             <div>Pirate Party Australia does not allow membership of multiple Australian federal political parties. If you wish to sign up to Pirate Party Australia and are currently a member of another party, please resign from that party first before submitting your application.</div>
-          </div>  
+          </div>
           <div class="control-group">
             <div class="controls">
               <label class="checkbox">
-                <input type="checkbox" data-ng-model="_recentMemberOfOtherParties"> I <strong>have been</strong> a member of another party within the last 12 months.              
+                <input type="checkbox" data-ng-model="_recentMemberOfOtherParties"> I <strong>have been</strong> a member of another party within the last 12 months.
               </label>
               <label data-ng-show="_recentMemberOfOtherParties == true">Which party? <input type="text" data-ng-model="other_party_in_last_12_months"></label>
             </div>
           </div>
-          
+
         </fieldset>
         <fieldset>
           <legend>Submission</legend>
