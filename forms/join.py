@@ -193,13 +193,13 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
                 "issued_date": issued_date,
                 "status": "pending"
             }
-    
+
             if payment_method != "paypal":
                 c = self._get_counter('new_member')
                 if c is None:
                     raise HTTPError(500, "mongodb keeled over at counter time")
                 out["reference"] = "FM%s" % c
-        
+
         elif membership_level == "associate":
             out = {
                 "v": 1,
@@ -214,7 +214,7 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
                 "issued_date": issued_date,
                 "status": "pending"
             }
-    
+
             if payment_method != "paypal":
                 c = self._get_counter('new_member_am')
                 if c is None:
@@ -247,7 +247,7 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
             if response['responseEnvelope']['ack'].startswith("Success"):
                 invoice['reference'] = response['invoiceNumber']
                 invoice['paypal_id'] = response['invoiceID']
-                return invoice 
+                return invoice
             else:
                 return None
 
@@ -272,14 +272,14 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
                   "Cheque": [
                     "Address:",
                     "Pirate Party Australia",
-                    "PO Box 527",
-                    "Balgowlah NSW 2093"
+                    "PO Box 385",
+                    "Figtree NSW 2525"
                   ]
                 }
               ]
             }
 
-            
+
             member_level = "INVALID"
             if member['membership_level'] == "full":
                 member_level = "Full Membership"

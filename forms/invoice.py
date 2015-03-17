@@ -2,6 +2,7 @@ from mako.lookup import TemplateLookup
 import tempfile
 import os
 import subprocess
+import logging
 
 tl = TemplateLookup(directories=['.'])
 
@@ -24,7 +25,9 @@ class Invoice:
             tmp.write(html)
             tmp.close()
             os.rename(tmp.name, tmp.name + '.html')
-            subprocess.call(['wkhtmltopdf', '--print-media-type', tmp.name + '.html', tmp.name + ".pdf"])
+            res = subprocess.call(['wkhtmltopdf', '--print-media-type', tmp.name + '.html', tmp.name + ".pdf"])
+            if res != 0:
+                logging.warn("Result of wkhtmltopdf was errno %s." % res)
             pdff = open(tmp.name + '.pdf', 'rb')
             pdf = pdff.read()
             pdff.close()
@@ -33,9 +36,8 @@ class Invoice:
             os.unlink(tmp.name + '.pdf')
 
             return pdf
-        except IOError:
-            print("File not writable.")
-
+        except IOError as e:
+            logging.error(e)
 
 def test():
   personal = {
@@ -80,7 +82,7 @@ def test():
       "message": "Thanks for joining Pirate Party Australia!",
       "payment_due": "Upon receipt"
   }
-  
+
   inv = Invoice(invoice, personal).to_html()
   print(inv)
 
