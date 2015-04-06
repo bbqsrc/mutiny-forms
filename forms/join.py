@@ -690,6 +690,9 @@ class ResignHandler(RequestHandler):
         if not record:
             return self.write('')
 
+        if record['details']['membership_level'] in ('expelled', 'resigned'):
+            return self.write('')
+
         reason = self.get_argument('reason', '')
 
         # TODO this state shouldn't be added to the details, but in history
