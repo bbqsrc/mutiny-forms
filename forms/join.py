@@ -413,7 +413,7 @@ class UpdateMemberFormHandler(NewMemberFormHandler):
 
     def send_admin_message(self, member_record):
         member = member_record['details']
-        msg = "Updated member: %s %s [%s] (%s)" % (member['given_names'],
+        msg = "[Audit] Updated member: %s %s [%s] (%s)" % (member['given_names'],
                 member['surname'], member['email'], member['residential_state'])
         id = member_record['_id'].hex
 
@@ -556,7 +556,7 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
         id = member_record['_id'].hex
 
         sendmail(create_email(
-                frm=member['email'],
+                frm='secretary@pirateparty.org.au',
                 to='secretary@pirateparty.org.au',
                 subject=msg,
                 text="%s\n%s" % (id, member_record['invoices'][0]['payment_method'])
@@ -639,7 +639,7 @@ class AuditHandler(RequestHandler):
         id = member_record['_id'].hex
 
         sendmail(create_email(
-                frm=member['email'],
+                frm='secretary@pirateparty.org.au',
                 to='secretary@pirateparty.org.au',
                 subject=msg,
                 text=id
@@ -710,7 +710,7 @@ class ResignHandler(RequestHandler):
         id = member_record['_id'].hex
 
         sendmail(create_email(
-                frm=member['email'],
+                frm='secretary@pirateparty.org.au',
                 to='secretary@pirateparty.org.au',
                 subject=msg,
                 text="%s\n\n%s" % (id, reason)
