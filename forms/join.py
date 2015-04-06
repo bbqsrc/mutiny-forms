@@ -353,7 +353,7 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
         ))
 
     def get(self):
-        self.render(self.name + '.html')
+        self.render(self.name + '.html', record=None)
 
     def post(self):
         data = self.validate(self.get_argument('data', None))
