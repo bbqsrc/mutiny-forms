@@ -464,7 +464,7 @@ class UpdateMemberFormHandler(NewMemberFormHandler):
         id = uuid.UUID(cookie.decode())
         record = db.members.find_one({"_id": id})
 
-        if record['details']['membership_level'] not in ('full', 'associate'):
+        if record['details']['membership_level'] not in ('founder', 'full', 'associate'):
             self.render(self.name + '-challenge.html', error=False)
             return
 
@@ -498,7 +498,7 @@ class UpdateMemberFormHandler(NewMemberFormHandler):
             logging.error("Attempt to retrieve record for '%s' but none found!" % id.hex)
             return self.render(self.name + "-challenge.html", error=True)
 
-        if member_record['details']['membership_level'] not in ('full', 'associate'):
+        if member_record['details']['membership_level'] not in ('founder', 'full', 'associate'):
             self.render(self.name + '-challenge.html', error=False)
             return
 
