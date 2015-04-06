@@ -8,6 +8,11 @@
     <link rel="stylesheet" type="text/css" href="../static/bootstrap-responsive.min.css">
     <link rel="stylesheet" type="text/css" href="../static/webfonts.css">
     <link rel="stylesheet" type="text/css" href="../static/logo.css">
+    {% if record %}
+    <script>
+        var record = {% raw record %};
+    </script>
+    {% end if %}
     <script src="../static/jquery-1.9.1.min.js"></script>
     <script src="../static/angular.min.js"></script>
     <script src="../static/join.js"></script>
@@ -19,7 +24,7 @@
         } else {
           $(this).parent().append("<span style='color: red'> *</span>");
         }
-      })});
+        })});
     </script>
     <style>
       body { background-color: #0073ae; padding: 0; }

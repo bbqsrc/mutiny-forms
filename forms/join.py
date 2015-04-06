@@ -54,6 +54,8 @@ def safe_insert(collection, data):
             time.sleep(wait_t)
     return False
 
+db = Connection().ppau
+mutiny = Connection().mutiny
 
 class NewMemberFormHandler(tornado.web.RequestHandler):
     def initialize(self):
@@ -62,8 +64,6 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
         self.welcome_email = open('welcome-email.txt').read()
         self.config = yaml.load(open('paypal.conf.yml'))[options.mode]
         self.paypal = PayPalAPI(self.config)
-        self.db = Connection().ppau
-        self.mutiny = Connection().mutiny
 
     def validate(self, data):
         try:
@@ -363,14 +363,14 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
             raise HTTPError(500, "invoice failed to send")
 
         member_record['invoices'][0] = invoice_record
-        if not safe_insert(self.db.members, member_record):
+        if not safe_insert(db.members, member_record):
             raise HTTPError(500, "mongodb keeled over")
 
         self.send_confirmation(member_record)
         self.send_admin_message(member_record)
 
     def _get_counter(self, name):
-        record = safe_modify(self.db.counters, {"_id": name}, {"$inc": {"count": 1}}, True)
+        record = safe_modify(db.counters, {"_id": name}, {"$inc": {"count": 1}}, True)
         logging.info("Current count for '%s': %s" % (name, record['count']))
         if record != False:
             return record['count']
@@ -442,35 +442,92 @@ class UpdateMemberFormHandler(NewMemberFormHandler):
         return member_record
 
     def get(self, id):
-        try:
-            id = uuid.UUID(id)
-        except:
-            self.render(self.name + "-notfound.html")
+        # 30 minutes max age.
+        cookie = self.get_secure_cookie('member_id', max_age_days=0.0208333)
+
+        # Cookie time yeah yeah
+        if cookie is None:
+            # Let's try to auth.
+            self.render(self.name + '-challenge.html', error=False)
             return
 
-        if not self.db.members.find_one({"_id": id}):
-            self.render(self.name + "-notfound.html")
+        # Check cookie actually matches requested id.
+        if cookie.decode() != id:
+            self.clear_cookie('member_id')
+            logging.error("Attempt to access other member. Cookie: '%s'; Attempt: '%s'" % (
+                cookie.decode(), id))
+            self.write('')
             return
 
-        self.render(self.name + ".html")
+        # Getting to this point assumes authentication went well.
+
+        id = uuid.UUID(cookie.decode())
+        record = db.members.find_one({"_id": id})
+
+        if record['details']['membership_level'] not in ('full', 'associate'):
+            self.render(self.name + '-challenge.html', error=False)
+            return
+
+        self.render(self.name + ".html", record=dumps(record['details']))
 
     def post(self, id):
+        # 30 minutes max age.
+        cookie = self.get_secure_cookie('member_id', max_age_days=0.0208333)
+
+        # Cookie time yeah yeah
+        if id is not None and cookie is not None and cookie.decode() == id:
+            return self.post_update(id)
+        else:
+            return self.post_attempt_authentication(id)
+
+    def post_attempt_authentication(self, id):
+        """This is a plain old POST."""
         try:
             id = uuid.UUID(id)
         except:
             raise HTTPError(400, "invalid ID")
 
-        member_record = self.db.members.find_one({"_id": id})
+        data_dob = self.get_argument('auth_dob', None)
+        data_surname = self.get_argument('auth_surname', None)
+
+        if data_dob is None or data_surname is None:
+            return self.render(self.name + "-challenge.html", error=True)
+
+        member_record = db.members.find_one({"_id": id})
+        if not member_record:
+            logging.error("Attempt to retrieve record for '%s' but none found!" % id.hex)
+            return self.render(self.name + "-challenge.html", error=True)
+
+        if member_record['details']['membership_level'] not in ('full', 'associate'):
+            self.render(self.name + '-challenge.html', error=False)
+            return
+
+        if member_record['details']['surname'].lower() == data_surname.lower() and\
+                member_record['details']['date_of_birth'].strftime("%d/%m/%Y") == data_dob:
+            self.set_secure_cookie("member_id", id.hex)
+            return self.render(self.name + ".html", record=dumps(member_record['details']))
+
+        return self.render(self.name + "-challenge.html", error=True)
+
+    def post_update(self, id):
+        """This one only works sanely via XHR."""
+        try:
+            id = uuid.UUID(id)
+        except:
+            raise HTTPError(400, "invalid ID")
+
+        member_record = db.members.find_one({"_id": id})
         if not member_record:
             raise HTTPError(403, "no member found by id")
 
         data = self.validate(self.get_argument('data', None))
         member_record = self.merge_data(data, member_record)
 
-        if not safe_modify(self.db.members, {"_id": id}, member_record):
+        if not safe_modify(db.members, {"_id": id}, member_record):
             raise HTTPError(500, "mongodb keeled over on update")
 
         self.send_admin_message(member_record)
+        self.clear_cookie('member_id')
 
 
 class PaymentMethodFormHandler(NewMemberFormHandler):
@@ -535,7 +592,7 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
             self.render(self.name + "-notfound.html")
             return
 
-        record = self.db.members.find_one({"_id": id})
+        record = db.members.find_one({"_id": id})
         if not record:
             self.render(self.name + "-notfound.html")
             return
@@ -545,7 +602,7 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
             self.render(self.name + "-paymentselected.html")
             return
 
-        self.render(self.name + ".html")
+        self.render(self.name + ".html", record=None)
 
     def post(self, id):
         try:
@@ -553,7 +610,7 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
         except:
             raise HTTPError(400, "invalid ID")
 
-        member_record = self.db.members.find_one({"_id": id})
+        member_record = db.members.find_one({"_id": id})
         if not member_record:
             raise HTTPError(403, "no member found by id")
 
@@ -568,23 +625,119 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
             raise HTTPError(500, "invoice failed to send")
 
         member_record['invoices'][0] = invoice_record
-        if not safe_modify(self.db.members, {"_id": id}, member_record):
+        if not safe_modify(db.members, {"_id": id}, member_record):
             raise HTTPError(500, "mongodb keeled over on update")
 
         self.send_confirmation(member_record)
         self.send_admin_message(member_record)
 
+class AuditHandler(RequestHandler):
+    def send_admin_message(self, member_record):
+        member = member_record['details']
+        msg = "[Audit] Member confirmed: %s %s [%s] (%s)" % (member['given_names'],
+                member['surname'], member['email'], member['residential_state'])
+        id = member_record['_id'].hex
+
+        sendmail(create_email(
+                frm=member['email'],
+                to='secretary@pirateparty.org.au',
+                subject=msg,
+                text=id
+        ))
+        logging.info("%s %s" % (msg, id))
+
+    def get(self, id):
+        try:
+            id = uuid.UUID(id)
+        except:
+            return self.write('')
+
+        record = db.members.find_one({"_id": id})
+        if not record:
+            return self.write('')
+
+        record['details']['last_audit_confirmation'] = datetime.datetime.utcnow()
+
+        if not safe_modify(db.members, {"_id": id}, record):
+            raise HTTPError(500, "mongodb keeled over on update")
+
+        self.send_admin_message(record)
+        self.write('Thanks for confirming your membership! You may now close this window.')
+
+class ResignHandler(RequestHandler):
+    def get(self, id):
+        try:
+            id = uuid.UUID(id)
+        except:
+            return self.write('')
+
+        record = db.members.find_one({"_id": id})
+        if not record:
+            return self.write('')
+
+        self.render('resign.html')
+
+    def post(self, id):
+        try:
+            id = uuid.UUID(id)
+        except:
+            return self.write('')
+
+        record = db.members.find_one({"_id": id})
+        if not record:
+            return self.write('')
+
+        reason = self.get_argument('reason', '')
+
+        # TODO this state shouldn't be added to the details, but in history
+        record['details']['membership_level'] = "resigned"
+        record['details']['resigned_on'] = datetime.datetime.utcnow()
+
+        if not safe_modify(db.members, {"_id": id}, record):
+            raise HTTPError(500, "mongodb keeled over on update")
+
+        self.send_admin_message(record, reason)
+
+        # Just in case they updated then resigned, and want to mangle data.
+        self.clear_cookie('member_id')
+
+        self.write("Sorry to see you go! You may now close this window.")
+
+    def send_admin_message(self, member_record, reason):
+        member = member_record['details']
+        msg = "[Audit] Member resigned: %s %s [%s] (%s)" % (member['given_names'],
+                member['surname'], member['email'], member['residential_state'])
+        id = member_record['_id'].hex
+
+        sendmail(create_email(
+                frm=member['email'],
+                to='secretary@pirateparty.org.au',
+                subject=msg,
+                text="%s\n\n%s" % (id, reason)
+        ))
+        logging.info("%s %s" % (msg, id))
+
+
+
 if __name__ == "__main__":
     tornado.options.parse_command_line()
     if options.no_mailer:
+        from mock import Mock
         sendmail = Mock()
 
+    with open('config.json') as f:
+        conf = json.load(f)
+
     application = Application([
-        (r"/", NewMemberFormHandler),
-        (r"/update/(.*)", UpdateMemberFormHandler),
-        (r"/payment/(.*)", PaymentMethodFormHandler),
-        (r"/static/(.*)", StaticFileHandler, {"path": "../static"})
-    ], **{"template_path": "../templates"})
+            (r"/", NewMemberFormHandler),
+            (r"/update/(.*)", UpdateMemberFormHandler),
+            (r"/payment/(.*)", PaymentMethodFormHandler),
+            (r"/audit/(.*)", AuditHandler),
+            (r"/resign/(.*)", ResignHandler),
+            (r"/static/(.*)", StaticFileHandler, {"path": "../static"})
+        ],
+        cookie_secret=conf['cookie_secret'],
+        **{"template_path": "../templates"})
     application.listen(options.port, xheaders=True)
     tornado.ioloop.IOLoop.instance().start()
 

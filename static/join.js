@@ -13,7 +13,7 @@ function JoinCtrl($scope) {
     $scope.submit = function() {
         var prop, node,
             out = {};
-        
+
         $scope._submitting = true;
 
         $(".ng-pristine").removeClass("ng-pristine").addClass("ng-dirty");
@@ -48,7 +48,7 @@ function JoinCtrl($scope) {
         console.log(arguments);
         var visible = $(this).is(":visible"),
             id = $(this).attr('id');
-        
+
         if (visible) {
             if (id) {
                 $("[for='" + id + "']").append("<span style='color: red'> *</span>");
@@ -59,7 +59,7 @@ function JoinCtrl($scope) {
 
         return visible;
     };
-    
+
     $scope.membership_level = "full";
     $scope.payment_method = "paypal";
     $scope.payment_amount = 50;
@@ -70,4 +70,32 @@ function JoinCtrl($scope) {
     } else {
         $scope._msg = "Your information has been successfully updated. Thanks!";
     }
+
+    if (!window.record) {
+        return;
+    }
+
+    for (var key in record) if (record.hasOwnProperty(key)) {
+        if (record[key] != null && record[key] != '') {
+            console.log(key)
+            if (key == "date_of_birth") {
+                $scope[key] = formatDate(record[key]);
+                continue;
+            }
+            $scope[key] = record[key];
+        }
+    }
+}
+
+function formatDate(date) {
+    var dt = new Date(date.$date);
+
+    var date = dt.getUTCDate();
+    var month = dt.getUTCMonth() + 1;
+    var year = dt.getUTCFullYear();
+
+    if (date < 10) { date = "0" + date; }
+    if (month < 10) { month = "0" + month; }
+
+    return date + '/' + month + '/' + year;
 }
