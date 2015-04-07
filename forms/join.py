@@ -521,6 +521,10 @@ class UpdateMemberFormHandler(NewMemberFormHandler):
             raise HTTPError(403, "no member found by id")
 
         data = self.validate(self.get_argument('data', None))
+
+        # Add audit stuff here too
+        member_record['details']['last_audit_confirmation'] = datetime.datetime.utcnow()
+
         member_record = self.merge_data(data, member_record)
 
         if not safe_modify(db.members, {"_id": id}, member_record):
