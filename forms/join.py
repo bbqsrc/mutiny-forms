@@ -679,7 +679,7 @@ class ResignHandler(RequestHandler):
         if not record:
             return self.write('')
 
-        if record['details']['member_level'] in ('resigned', 'expelled'):
+        if record['details']['membership_level'] in ('resigned', 'expelled'):
             return self.write("You have already resigned from the Party!")
 
         self.render('resign.html')
