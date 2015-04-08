@@ -665,6 +665,10 @@ class AuditHandler(RequestHandler):
         if record['details']['membership_level'] not in ('full', 'founder'):
             return self.write("")
 
+        # You are annoying and you know who you are.
+        if record['details'].get('last_audit_confirmation', None) is not None:
+            return self.write("You have already confirmed your membership.")
+
         record['details']['last_audit_confirmation'] = datetime.datetime.utcnow()
 
         if not safe_modify(db.members, {"_id": id}, record):
