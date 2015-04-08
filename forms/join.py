@@ -600,6 +600,8 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
         if not record:
             self.render(self.name + "-notfound.html")
             return
+        if record['details']['membership_level'] in ('resigned', 'expelled'):
+            return self.write("You have already resigned from the Party!")
 
         invoices = record.get('invoices')
         if record['details']['membership_level'] != "full" or (invoices is not None and len(invoices) > 0):
@@ -659,6 +661,9 @@ class AuditHandler(RequestHandler):
         record = db.members.find_one({"_id": id})
         if not record:
             return self.write('')
+
+        if record['details']['membership_level'] not in ('full', 'founder'):
+            return self.write("")
 
         record['details']['last_audit_confirmation'] = datetime.datetime.utcnow()
 
@@ -741,7 +746,7 @@ if __name__ == "__main__":
     application = Application([
             (r"/", NewMemberFormHandler),
             (r"/update/(.*)", UpdateMemberFormHandler),
-            (r"/payment/(.*)", PaymentMethodFormHandler),
+            #(r"/payment/(.*)", PaymentMethodFormHandler),
             (r"/audit/(.*)", AuditHandler),
             (r"/resign/(.*)", ResignHandler),
             (r"/static/(.*)", StaticFileHandler, {"path": "../static"})
