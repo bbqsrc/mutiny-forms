@@ -14,7 +14,7 @@ from invoice import Invoice
 from bbqutils.email import sendmail, create_email, create_attachment
 from mutiny_paypal import PayPalAPI
 from bson.json_util import dumps
-from pymongo import Connection
+from pymongo import MongoClient
 from tornado.web import Application, HTTPError, RequestHandler, StaticFileHandler
 from tornado.options import define, options
 
@@ -54,8 +54,7 @@ def safe_insert(collection, data):
             time.sleep(wait_t)
     return False
 
-db = Connection().ppau
-mutiny = Connection().mutiny
+db = MongoClient().ppau
 
 class NewMemberFormHandler(tornado.web.RequestHandler):
     def initialize(self):
@@ -638,11 +637,22 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
         self.send_admin_message(member_record)
 
 class AuditHandler(RequestHandler):
-    def send_admin_message(self, member_record):
-        member = member_record['details']
+    def _is_already_done(self, record):
+        return record['details'].get('last_audit_confirmation', None) is not None
+
+    def _modify_record(self, record):
+        record['details']['last_audit_confirmation'] = datetime.datetime.utcnow()
+
+    def _get_msg(self, member):
         msg = "[Audit] Member confirmed: %s %s [%s] (%s)" % (member['given_names'],
                 member['surname'], member['email'], member['residential_state'])
+        return msg
+
+    def send_admin_message(self, member_record):
+        member = member_record['details']
         id = member_record['_id'].hex
+
+        msg = self._get_msg(member)
 
         sendmail(create_email(
                 frm='secretary@pirateparty.org.au',
@@ -666,16 +676,29 @@ class AuditHandler(RequestHandler):
             return self.write("")
 
         # You are annoying and you know who you are.
-        if record['details'].get('last_audit_confirmation', None) is not None:
+        if self._is_already_done(record):
             return self.write("You have already confirmed your membership.")
 
-        record['details']['last_audit_confirmation'] = datetime.datetime.utcnow()
+        self._modify_record(record)
 
         if not safe_modify(db.members, {"_id": id}, record):
             raise HTTPError(500, "mongodb keeled over on update")
 
         self.send_admin_message(record)
         self.write('Thanks for confirming your membership! You may now close this window.')
+
+class NSWAuditHandler(AuditHandler):
+    def _is_already_done(self, record):
+        return record['details'].get('nsw_membership_form_mailed', None) is not None
+
+    def _modify_record(self, record):
+        record['details']['nsw_membership_form_mailed'] = datetime.datetime.utcnow()
+
+    def _get_msg(self, member):
+        msg = "[NSW] Member mailed: %s %s [%s]" % (member['given_names'],
+                member['surname'], member['email'])
+        return msg
+
 
 class ResignHandler(RequestHandler):
     def get(self, id):
@@ -752,6 +775,7 @@ if __name__ == "__main__":
             (r"/update/(.*)", UpdateMemberFormHandler),
             #(r"/payment/(.*)", PaymentMethodFormHandler),
             (r"/audit/(.*)", AuditHandler),
+            (r"/nsw/(.*)", NSWAuditHandler),
             (r"/resign/(.*)", ResignHandler),
             (r"/static/(.*)", StaticFileHandler, {"path": "../static"})
         ],
