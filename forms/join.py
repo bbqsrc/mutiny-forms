@@ -648,6 +648,9 @@ class AuditHandler(RequestHandler):
                 member['surname'], member['email'], member['residential_state'])
         return msg
 
+    def _page_msg(self):
+        return 'Thanks for confirming your membership! You may now close this window.'
+
     def send_admin_message(self, member_record):
         member = member_record['details']
         id = member_record['_id'].hex
@@ -685,7 +688,7 @@ class AuditHandler(RequestHandler):
             raise HTTPError(500, "mongodb keeled over on update")
 
         self.send_admin_message(record)
-        self.write('Thanks for confirming your membership! You may now close this window.')
+        self.write(self._page_msg())
 
 class NSWAuditHandler(AuditHandler):
     def _is_already_done(self, record):
@@ -699,6 +702,8 @@ class NSWAuditHandler(AuditHandler):
                 member['surname'], member['email'])
         return msg
 
+    def _page_msg(self):
+        return 'Thanks for mailing your form! You may now close this window.'
 
 class ResignHandler(RequestHandler):
     def get(self, id):
