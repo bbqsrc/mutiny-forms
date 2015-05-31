@@ -148,7 +148,7 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
             "joined_on": ts
         }
 
-        invoice = self.create_invoice_doc(data['membership_level'],
+        invoice = self.create_invoice_record(data['membership_level'],
                                              data['payment_method'],
                                              data['payment_amount'])
 
@@ -171,52 +171,56 @@ class NewMemberFormHandler(tornado.web.RequestHandler):
             "v": 1
         }
 
-    def create_invoice_doc(self, membership_level, payment_method,
-            price=None, contrib=None):
-        issued_date = datetime.datetime.utcnow()
-        due_date = issued_date + datetime.timedelta(days=90)
-
-        doc = {
-            "v": 1,
-            "ts": datetime.datetime.utcnow(),
-            "items": [],
-            "payment_method": payment_method,
-            "due_date": due_date,
-            "issued_date": issued_date,
-            "status": "pending"
-        }
-
-        if membership_level == "full":
-            member_item = "Full"
-            counter = "new_member"
-            ref_prefix = "FM"
-        elif membership_level == "associate":
-            member_item = "Associate"
-            counter = "new_member_am"
-            ref_prefix = "AM"
-
+    def create_invoice_record(self, membership_level, payment_method, price=None):
         if price is None:
             if membership_level in ("full", "associate"):
                 price = 2000
-        doc['items'].append({
-            "item": "%s Membership (12 Months)" % member_item,
-            "qty": 1,
-            "price": price
-        })
 
-        if contrib:
-            doc['items'].append({
-                "item": "Donation",
-                "qty": 1,
-                "price": contrib
-            })
+        issued_date = datetime.datetime.utcnow()
+        due_date = issued_date + datetime.timedelta(days=30)
 
-        if payment_method != "paypal":
-            # TODO port counter getter
-            c = self._get_counter(counter)
-            doc["reference"] = "%s%s" % (ref_prefix, c)
+        if membership_level == "full":
+            out = {
+                "v": 1,
+                "ts": datetime.datetime.utcnow(),
+                "items": [{
+                    "item": "Full Membership - 12 Months",
+                    "qty": 1,
+                    "price": price
+                }],
+                "payment_method": payment_method,
+                "due_date": due_date,
+                "issued_date": issued_date,
+                "status": "pending"
+            }
 
-        return doc
+            if payment_method != "paypal":
+                c = self._get_counter('new_member')
+                if c is None:
+                    raise HTTPError(500, "mongodb keeled over at counter time")
+                out["reference"] = "FM%s" % c
+
+        elif membership_level == "associate":
+            out = {
+                "v": 1,
+                "ts": datetime.datetime.utcnow(),
+                "items": [{
+                    "item": "Associate Membership - 12 Months",
+                    "qty": 1,
+                    "price": price
+                }],
+                "payment_method": payment_method,
+                "due_date": due_date,
+                "issued_date": issued_date,
+                "status": "pending"
+            }
+
+            if payment_method != "paypal":
+                c = self._get_counter('new_member_am')
+                if c is None:
+                    raise HTTPError(500, "mongodb keeled over at counter time")
+                out["reference"] = "AM%s" % c
+        return out
 
     def create_and_send_invoice(self, member, invoice):
         if invoice['payment_method'] == "paypal":
@@ -565,7 +569,7 @@ class PaymentMethodFormHandler(NewMemberFormHandler):
         logging.debug(dumps(member_record, indent=2))
 
     def merge_data(self, data, member_record):
-        invoice = self.create_invoice_doc("full", data['payment_method'])
+        invoice = self.create_invoice_record("full", data['payment_method'])
         history_item = {
             "action": "new-invoice",
             "ts": invoice['ts'],

@@ -251,12 +251,9 @@
 
         <div data-ng-show="membership_level != null && payment_amount > 0">
             <p>Please select payment method:</p>
-            <!--
             <label class="radio">
               <input type="radio" checked name="payment_method" data-ng-model="payment_method" value="paypal"> PayPal (including Credit/Debit Card)
             </label>
-            -->
-            <p>We are currently dealing with PayPal being their usual incompetent, corporate nightmare. Until then, please choose direct deposit or cheque. You may also separately <a href="https://pirateparty.org.au/donate">donate by credit or debit card.</a></p>
             <label class="radio">
               <input type="radio" name="payment_method" data-ng-model="payment_method" value="direct_deposit"> Direct Deposit
             </label>
